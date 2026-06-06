@@ -1,0 +1,101 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import {
+  LayoutDashboard,
+  Building2,
+  MessageSquare,
+  Send,
+  History,
+  FileText,
+  LogOut,
+} from 'lucide-react';
+import { ROLES, ROUTES, UI_MESSAGES, ENV } from '@/constants';
+import { useAuthStore } from '@/store/auth.store';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+const COMPANY_NAV: NavItem[] = [
+  { label: 'Dashboard', href: ROUTES.COMPANY.DASHBOARD, icon: LayoutDashboard },
+  { label: 'Meta WABA', href: ROUTES.COMPANY.WABA, icon: Building2 },
+  { label: 'Templates', href: ROUTES.COMPANY.TEMPLATES, icon: FileText },
+  { label: 'Send Message', href: ROUTES.COMPANY.SEND_MESSAGE, icon: Send },
+  { label: 'Messages', href: ROUTES.COMPANY.MESSAGES, icon: History },
+];
+
+const ADMIN_NAV: NavItem[] = [
+  { label: 'Dashboard', href: ROUTES.ADMIN.DASHBOARD, icon: LayoutDashboard },
+  { label: 'Companies', href: ROUTES.ADMIN.COMPANIES, icon: Building2 },
+  { label: 'All Messages', href: ROUTES.ADMIN.MESSAGES, icon: MessageSquare },
+];
+
+interface SidebarProps {
+  onNavigate?: () => void;
+}
+
+export function Sidebar({ onNavigate }: SidebarProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
+  const nav = user?.role === ROLES.SUPER_ADMIN ? ADMIN_NAV : COMPANY_NAV;
+
+  const handleLogout = () => {
+    logout();
+    router.replace(ROUTES.LOGIN);
+  };
+
+  return (
+    <div className="flex h-full w-64 flex-col bg-card">
+      <div className="border-b px-6 py-5">
+        <div className="text-lg font-bold text-primary">{ENV.APP_NAME}</div>
+        <div className="truncate text-xs text-muted-foreground">
+          {user?.role === ROLES.SUPER_ADMIN ? 'Super Admin' : user?.company?.name ?? 'Company'}
+        </div>
+      </div>
+
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+        {nav.map((item) => {
+          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onNavigate}
+              className={cn(
+                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                active
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="border-t p-4">
+        <div className="mb-3 text-sm">
+          <div className="truncate font-medium">
+            {user?.first_name} {user?.last_name ?? ''}
+          </div>
+          <div className="truncate text-xs text-muted-foreground">{user?.email}</div>
+        </div>
+        <Button variant="outline" size="sm" className="w-full" onClick={handleLogout}>
+          <LogOut className="mr-2 h-4 w-4" /> {UI_MESSAGES.AUTH.LOGOUT}
+        </Button>
+      </div>
+    </div>
+  );
+}
