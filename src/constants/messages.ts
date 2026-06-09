@@ -12,6 +12,11 @@ export const UI_MESSAGES = {
     GENERIC_ERROR: 'Something went wrong. Please try again.',
     REGISTRATION_PENDING:
       'Registration submitted. Your account will be activated after super admin approval.',
+    ACCEPT_LEGAL_PREFIX: 'I have read and agree to the',
+    ACCEPT_LEGAL_AND: 'and',
+    ACCEPT_LEGAL_REQUIRED: 'You must accept the Terms & Conditions and Privacy Policy to continue.',
+    TERMS_LINK_LABEL: 'Terms & Conditions',
+    PRIVACY_LINK_LABEL: 'Privacy Policy',
   },
   COMPANY: {
     DASHBOARD_TITLE: 'Company Dashboard',

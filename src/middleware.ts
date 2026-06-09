@@ -1,9 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { COOKIE_KEYS, ROLES, ROUTES } from '@/constants';
 
-const PUBLIC_PATHS = [ROUTES.LOGIN, ROUTES.REGISTER, ROUTES.PRIVACY];
-// Paths that are public but should NOT redirect authenticated users back to the dashboard
-const ALWAYS_PUBLIC_PATHS = [ROUTES.PRIVACY];
+// Paths that are accessible without authentication.
+const PUBLIC_PATHS = [ROUTES.LOGIN, ROUTES.REGISTER, ROUTES.PRIVACY, ROUTES.TERMS];
+
+// Paths that are public AND should remain accessible even to logged-in users.
+// (i.e. the marketing site, privacy policy, terms — never bounce these to the dashboard)
+const ALWAYS_PUBLIC_PATHS = [ROUTES.HOME, ROUTES.PRIVACY, ROUTES.TERMS];
 
 const isPublic = (path: string) => PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
 const isAlwaysPublic = (path: string) =>
@@ -12,7 +15,8 @@ const isAlwaysPublic = (path: string) =>
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  if (pathname === ROUTES.HOME) {
+  // Root marketing page is always public — let it through without any auth checks.
+  if (isAlwaysPublic(pathname)) {
     return NextResponse.next();
   }
 
@@ -43,8 +47,7 @@ export function middleware(req: NextRequest) {
   }
 
   // If already authenticated and visiting login/register, push to the right dashboard.
-  // (Never redirect from always-public pages like /privacy)
-  if (token && isPublic(pathname) && !isAlwaysPublic(pathname)) {
+  if (token && isPublic(pathname)) {
     const url = req.nextUrl.clone();
     url.pathname = role === ROLES.SUPER_ADMIN ? ROUTES.ADMIN.DASHBOARD : ROUTES.COMPANY.DASHBOARD;
     return NextResponse.redirect(url);

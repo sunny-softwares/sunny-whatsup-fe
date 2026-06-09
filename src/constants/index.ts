@@ -5,3 +5,4 @@ export * from './routes';
 export * from './storage';
 export * from './messages';
 export * from './templates';
+export * from './legal';

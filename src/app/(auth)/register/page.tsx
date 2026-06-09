@@ -8,6 +8,7 @@ import { pickErrorMessage } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Card,
   CardContent,
@@ -30,6 +31,7 @@ const initial: RegisterPayload = {
 
 export default function RegisterPage() {
   const [form, setForm] = useState<RegisterPayload>(initial);
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -39,6 +41,11 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Defensive — the submit button is also disabled, but never trust the UI.
+    if (!acceptedLegal) {
+      setError(UI_MESSAGES.AUTH.ACCEPT_LEGAL_REQUIRED);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -75,6 +82,8 @@ export default function RegisterPage() {
       </Card>
     );
   }
+
+  const submitDisabled = loading || !acceptedLegal;
 
   return (
     <Card>
@@ -121,22 +130,48 @@ export default function RegisterPage() {
             </div>
           </div>
 
+          {/* T&C + Privacy acceptance — required before submit is enabled */}
+          <div className="flex items-start gap-2 rounded-md border bg-muted/30 p-3">
+            <Checkbox
+              id="accept_legal"
+              checked={acceptedLegal}
+              onChange={(e) => setAcceptedLegal(e.target.checked)}
+              required
+              className="mt-0.5"
+            />
+            <Label htmlFor="accept_legal" className="cursor-pointer text-sm font-normal leading-relaxed">
+              {UI_MESSAGES.AUTH.ACCEPT_LEGAL_PREFIX}{' '}
+              <Link
+                href={ROUTES.TERMS}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                {UI_MESSAGES.AUTH.TERMS_LINK_LABEL}
+              </Link>{' '}
+              {UI_MESSAGES.AUTH.ACCEPT_LEGAL_AND}{' '}
+              <Link
+                href={ROUTES.PRIVACY}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                {UI_MESSAGES.AUTH.PRIVACY_LINK_LABEL}
+              </Link>
+              .
+            </Label>
+          </div>
+
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </CardContent>
         <CardFooter className="flex flex-col items-stretch gap-3">
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={submitDisabled}>
             {loading ? UI_MESSAGES.COMMON.LOADING : UI_MESSAGES.COMMON.SUBMIT}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             {UI_MESSAGES.AUTH.HAVE_ACCOUNT}{' '}
             <Link href={ROUTES.LOGIN} className="text-primary hover:underline">
               {UI_MESSAGES.AUTH.SIGN_IN}
-            </Link>
-          </p>
-          <p className="text-center text-xs text-muted-foreground">
-            By registering you agree to our{' '}
-            <Link href={ROUTES.PRIVACY} className="text-primary hover:underline">
-              Privacy Policy
             </Link>
           </p>
         </CardFooter>
