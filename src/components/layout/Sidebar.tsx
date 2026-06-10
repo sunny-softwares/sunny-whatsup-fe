@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -10,6 +11,10 @@ import {
   History,
   FileText,
   LogOut,
+  Settings,
+  Shield,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { ROLES, ROUTES, UI_MESSAGES, ENV } from '@/constants';
 import { useAuthStore } from '@/store/auth.store';
@@ -20,6 +25,12 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+}
+
+interface NavGroup {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: NavItem[];
 }
 
 const COMPANY_NAV: NavItem[] = [
@@ -36,6 +47,14 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'All Messages', href: ROUTES.ADMIN.MESSAGES, icon: MessageSquare },
 ];
 
+const SETTINGS_GROUP: NavGroup = {
+  label: UI_MESSAGES.SETTINGS.TITLE,
+  icon: Settings,
+  children: [
+    { label: UI_MESSAGES.SETTINGS.SECURITY_LABEL, href: ROUTES.SETTINGS.SECURITY, icon: Shield },
+  ],
+};
+
 interface SidebarProps {
   onNavigate?: () => void;
 }
@@ -48,10 +67,20 @@ export function Sidebar({ onNavigate }: SidebarProps) {
 
   const nav = user?.role === ROLES.SUPER_ADMIN ? ADMIN_NAV : COMPANY_NAV;
 
+  const isSettingsActive = pathname.startsWith(ROUTES.SETTINGS.ROOT);
+  const [settingsOpen, setSettingsOpen] = useState(isSettingsActive);
+
+  useEffect(() => {
+    if (isSettingsActive) setSettingsOpen(true);
+  }, [isSettingsActive]);
+
   const handleLogout = () => {
     logout();
     router.replace(ROUTES.LOGIN);
   };
+
+  const GroupIcon = SETTINGS_GROUP.icon;
+  const Chevron = settingsOpen ? ChevronDown : ChevronRight;
 
   return (
     <div className="flex h-full w-64 flex-col bg-card">
@@ -83,6 +112,48 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             </Link>
           );
         })}
+
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={() => setSettingsOpen((prev) => !prev)}
+            className={cn(
+              'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+              isSettingsActive
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            )}
+          >
+            <GroupIcon className="h-4 w-4 shrink-0" />
+            <span className="flex-1 truncate text-left">{SETTINGS_GROUP.label}</span>
+            <Chevron className="h-3.5 w-3.5 shrink-0" />
+          </button>
+
+          {settingsOpen ? (
+            <div className="mt-1 space-y-1 pl-4">
+              {SETTINGS_GROUP.children.map((child) => {
+                const active = pathname === child.href || pathname.startsWith(`${child.href}/`);
+                const ChildIcon = child.icon;
+                return (
+                  <Link
+                    key={child.href}
+                    href={child.href}
+                    onClick={onNavigate}
+                    className={cn(
+                      'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                      active
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                    )}
+                  >
+                    <ChildIcon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{child.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
       </nav>
 
       <div className="border-t p-4">

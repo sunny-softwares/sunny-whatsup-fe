@@ -19,6 +19,10 @@ export const ROUTES = {
     COMPANIES: '/admin/companies',
     MESSAGES: '/admin/messages',
   },
+  SETTINGS: {
+    ROOT: '/settings',
+    SECURITY: '/settings/security',
+  },
 } as const;
 
 export const API_ROUTES = {
@@ -26,6 +30,7 @@ export const API_ROUTES = {
     REGISTER: '/auth/register',
     LOGIN: '/auth/login',
     ME: '/auth/me',
+    CHANGE_PASSWORD: '/auth/change-password',
   },
   SUPER_ADMIN: {
     STATS: '/super-admin/stats',

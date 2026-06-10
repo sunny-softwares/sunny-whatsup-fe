@@ -26,8 +26,9 @@ export function middleware(req: NextRequest) {
   // Block dashboard routes when not authenticated.
   const isCompany = pathname.startsWith(ROUTES.COMPANY.ROOT);
   const isAdmin = pathname.startsWith(ROUTES.ADMIN.ROOT);
+  const isSettings = pathname.startsWith(ROUTES.SETTINGS.ROOT);
 
-  if ((isCompany || isAdmin) && !token) {
+  if ((isCompany || isAdmin || isSettings) && !token) {
     const url = req.nextUrl.clone();
     url.pathname = ROUTES.LOGIN;
     url.searchParams.set('next', pathname);

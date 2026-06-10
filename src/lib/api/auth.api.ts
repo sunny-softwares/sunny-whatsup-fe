@@ -18,6 +18,12 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface ChangePasswordPayload {
+  current_password: string;
+  new_password: string;
+  confirm_new_password: string;
+}
+
 export const authApi = {
   async register(payload: RegisterPayload) {
     const { data } = await apiClient.post<ApiResponseSuccess<{ user: AuthUser; company: unknown }>>(
@@ -35,6 +41,13 @@ export const authApi = {
   },
   async me() {
     const { data } = await apiClient.get<ApiResponseSuccess<AuthUser>>(API_ROUTES.AUTH.ME);
+    return data;
+  },
+  async changePassword(payload: ChangePasswordPayload) {
+    const { data } = await apiClient.patch<ApiResponseSuccess<null>>(
+      API_ROUTES.AUTH.CHANGE_PASSWORD,
+      payload,
+    );
     return data;
   },
 };

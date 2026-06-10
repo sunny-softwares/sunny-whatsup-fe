@@ -44,6 +44,18 @@ export const UI_MESSAGES = {
     REJECT: 'Reject',
     MESSAGES_TITLE: 'All Messages',
   },
+  SETTINGS: {
+    TITLE: 'Settings',
+    SECURITY_LABEL: 'Security',
+    SECURITY_TITLE: 'Change Password',
+    SECURITY_SUBTITLE: 'Update your account password to keep it secure',
+    CURRENT_PASSWORD_LABEL: 'Current password',
+    NEW_PASSWORD_LABEL: 'New password',
+    CONFIRM_PASSWORD_LABEL: 'Confirm new password',
+    CHANGE_PASSWORD_BUTTON: 'Change password',
+    PASSWORD_CHANGED: 'Password changed successfully',
+    PASSWORD_MISMATCH: 'New password and confirmation do not match',
+  },
   COMMON: {
     LOADING: 'Loading…',
     SAVE: 'Save',
