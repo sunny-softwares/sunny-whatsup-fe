@@ -162,10 +162,6 @@ export default function WabaPage() {
         <Card>
           <CardHeader>
             <CardTitle>Connect Meta WhatsApp Business Account</CardTitle>
-            <CardDescription>
-              Use Embedded Signup for production, or paste a System User token for sandbox / local
-              testing.
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="inline-flex flex-wrap rounded-md border bg-muted p-1">
@@ -181,7 +177,7 @@ export default function WabaPage() {
               >
                 Embedded Signup
               </button>
-              <button
+              {/* <button
                 type="button"
                 onClick={() => setMode('manual')}
                 className={cn(
@@ -192,15 +188,11 @@ export default function WabaPage() {
                 )}
               >
                 Sandbox / Manual token
-              </button>
+              </button> */}
             </div>
 
             {mode === 'embedded' ? (
               <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Launches the Meta JS SDK. Your Meta app must have the WhatsApp product enabled and a
-                  WhatsApp Embedded Signup configuration created.
-                </p>
                 <MetaEmbeddedSignupButton onSuccess={handleEmbeddedConnect} disabled={busy} />
                 {error ? <p className="text-sm text-destructive">{error}</p> : null}
               </div>
