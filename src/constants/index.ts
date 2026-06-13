@@ -6,3 +6,5 @@ export * from './storage';
 export * from './messages';
 export * from './templates';
 export * from './legal';
+export * from './query';
+export * from './format';

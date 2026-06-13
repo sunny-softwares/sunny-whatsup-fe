@@ -5,6 +5,7 @@ import type {
   CreateTemplateInput,
   MessageTemplate,
   Pagination,
+  TemplateListParams,
   TemplatesByCategory,
 } from '@/types';
 
@@ -16,7 +17,7 @@ export const templateApi = {
     );
     return data;
   },
-  async list(params: { category?: string; status?: string; search?: string; page?: number; pageSize?: number } = {}) {
+  async list(params: TemplateListParams = {}) {
     const { data } = await apiClient.get<
       ApiResponseSuccess<MessageTemplate[]> & { meta?: { pagination: Pagination } }
     >(API_ROUTES.COMPANY.TEMPLATES, { params });

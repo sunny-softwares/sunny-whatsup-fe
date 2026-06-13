@@ -18,6 +18,8 @@ export const ROUTES = {
     DASHBOARD: '/admin/dashboard',
     COMPANIES: '/admin/companies',
     MESSAGES: '/admin/messages',
+    TEMPLATES: '/admin/templates',
+    TEMPLATES_NEW: '/admin/templates/new',
   },
   SETTINGS: {
     ROOT: '/settings',
@@ -38,7 +40,13 @@ export const API_ROUTES = {
     COMPANY: (id: string) => `/super-admin/companies/${id}`,
     APPROVE: (id: string) => `/super-admin/companies/${id}/approve`,
     REJECT: (id: string) => `/super-admin/companies/${id}/reject`,
+    SET_ACTIVE: (id: string) => `/super-admin/companies/${id}/active`,
     MESSAGES: '/super-admin/messages',
+    COMPANY_TEMPLATES: (companyId: string) => `/super-admin/companies/${companyId}/templates`,
+    COMPANY_TEMPLATE: (companyId: string, id: string) =>
+      `/super-admin/companies/${companyId}/templates/${id}`,
+    COMPANY_TEMPLATES_SYNC: (companyId: string) =>
+      `/super-admin/companies/${companyId}/templates/sync`,
   },
   COMPANY: {
     ME: '/company/me',

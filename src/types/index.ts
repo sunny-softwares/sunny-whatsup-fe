@@ -30,6 +30,7 @@ export interface Company {
   contact_phone: string | null;
   website: string | null;
   status: 'pending' | 'approved' | 'rejected' | 'suspended';
+  is_active: boolean;
   approved_at: string | null;
   rejected_at: string | null;
   rejection_reason: string | null;
@@ -64,14 +65,21 @@ export interface WabaAccount {
 export interface MessageLog {
   id: string;
   company_id: string;
+  company: { id: string; name: string } | null;
   recipient_phone: string;
   message_type: string;
-  message_payload: Record<string, unknown>;
+  template_id: string | null;
+  template: { id: string | null; name: string } | null;
+  message_payload?: Record<string, unknown>;
   meta_message_id: string | null;
   status: 'queued' | 'sent' | 'delivered' | 'read' | 'failed';
+  error_payload?: Record<string, unknown> | null;
   sent_at: string | null;
+  delivered_at: string | null;
+  read_at: string | null;
+  failed_at: string | null;
   created_at: string;
-  phoneNumber?: { id: string; display_phone_number: string; phone_number_id: string };
+  phoneNumber?: { id: string; display_phone_number: string; phone_number_id: string } | null;
 }
 
 export interface Pagination {
@@ -79,6 +87,38 @@ export interface Pagination {
   pageSize: number;
   total: number;
   totalPages: number;
+}
+
+export interface MessageListParams {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+  search?: string;
+  company?: string;
+  date_from?: string;
+  date_to?: string;
+  sort_by?: string;
+  sort_order?: string;
+}
+
+export interface CompanyListParams {
+  status?: string;
+  search?: string;
+  is_active?: boolean;
+  page?: number;
+  pageSize?: number;
+  sort_by?: string;
+  sort_order?: string;
+}
+
+export interface TemplateListParams {
+  category?: string;
+  status?: string;
+  search?: string;
+  page?: number;
+  pageSize?: number;
+  sort_by?: string;
+  sort_order?: string;
 }
 
 export interface ApiResponseSuccess<T> {

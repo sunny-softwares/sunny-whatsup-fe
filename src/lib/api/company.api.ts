@@ -4,6 +4,7 @@ import type {
   ApiResponseSuccess,
   Company,
   CompanyStats,
+  MessageListParams,
   MessageLog,
   Pagination,
   WabaAccount,
@@ -69,7 +70,7 @@ export const companyApi = {
     );
     return data;
   },
-  async listMessages(params: { page?: number; pageSize?: number; status?: string } = {}) {
+  async listMessages(params: MessageListParams = {}) {
     const { data } = await apiClient.get<
       ApiResponseSuccess<MessageLog[]> & { meta?: { pagination: Pagination } }
     >(API_ROUTES.COMPANY.MESSAGES, { params });

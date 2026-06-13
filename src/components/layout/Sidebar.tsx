@@ -44,6 +44,7 @@ const COMPANY_NAV: NavItem[] = [
 const ADMIN_NAV: NavItem[] = [
   { label: 'Dashboard', href: ROUTES.ADMIN.DASHBOARD, icon: LayoutDashboard },
   { label: 'Companies', href: ROUTES.ADMIN.COMPANIES, icon: Building2 },
+  { label: 'Templates', href: ROUTES.ADMIN.TEMPLATES, icon: FileText },
   { label: 'All Messages', href: ROUTES.ADMIN.MESSAGES, icon: MessageSquare },
 ];
 
