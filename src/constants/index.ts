@@ -4,6 +4,7 @@ export * from './statuses';
 export * from './routes';
 export * from './storage';
 export * from './messages';
+export * from './media';
 export * from './templates';
 export * from './legal';
 export * from './query';

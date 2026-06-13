@@ -4,6 +4,7 @@ import type {
   ApiResponseSuccess,
   Company,
   CompanyStats,
+  MessageHeaderVariable,
   MessageListParams,
   MessageLog,
   Pagination,
@@ -22,7 +23,7 @@ export interface SendMessagePayload {
   template_id: string;
   phone_number_id?: string;
   variables?: {
-    header?: string[];
+    header?: MessageHeaderVariable[];
     body?: string[];
     buttons?: string[];
   };

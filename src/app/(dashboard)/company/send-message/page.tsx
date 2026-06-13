@@ -7,19 +7,23 @@ import {
   ROUTES,
   TEMPLATE_CATEGORY_LABEL,
   TEMPLATE_CATEGORY_VALUES,
+  TEMPLATE_HEADER_FORMAT,
   TEMPLATE_STATUS,
+  MEDIA_MESSAGES,
   UI_MESSAGES,
 } from '@/constants';
 import { companyApi } from '@/lib/api/company.api';
 import { templateApi } from '@/lib/api/template.api';
+import { mediaApi } from '@/lib/api/media.api';
 import { pickErrorMessage } from '@/lib/utils';
-import type { MessageTemplate, WabaAccount } from '@/types';
+import type { MessageDocumentUploadResult, MessageTemplate, WabaAccount } from '@/types';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TemplatePreview } from '@/components/dashboard/TemplatePreview';
+import { PdfUpload } from '@/components/dashboard/PdfUpload';
 
 const padToLength = (arr: string[], n: number) => {
   if (arr.length === n) return arr;
@@ -36,6 +40,8 @@ export default function SendMessagePage() {
   const [headerVars, setHeaderVars] = useState<string[]>([]);
   const [bodyVars, setBodyVars] = useState<string[]>([]);
   const [buttonVars, setButtonVars] = useState<string[]>([]);
+  // PDF attached for a template whose header is a DOCUMENT.
+  const [headerDocument, setHeaderDocument] = useState<MessageDocumentUploadResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,18 +76,34 @@ export default function SendMessagePage() {
 
   const template = useMemo(() => templates.find((t) => t.id === templateId) || null, [templates, templateId]);
 
+  const isDocumentHeader =
+    template?.variables.header?.format === TEMPLATE_HEADER_FORMAT.DOCUMENT;
+  const isTextHeader =
+    !!template?.variables.header && template.variables.header.format === TEMPLATE_HEADER_FORMAT.TEXT;
+
   // Resize variable arrays whenever the selected template changes.
   useEffect(() => {
+    setHeaderDocument(null);
     if (!template) {
       setHeaderVars([]);
       setBodyVars([]);
       setButtonVars([]);
       return;
     }
-    setHeaderVars((prev) => padToLength(prev, template.variables.header?.count ?? 0));
+    // Document headers carry a media id, not positional text values.
+    const headerCount = template.variables.header?.format === TEMPLATE_HEADER_FORMAT.TEXT
+      ? template.variables.header.count
+      : 0;
+    setHeaderVars((prev) => padToLength(prev, headerCount));
     setBodyVars((prev) => padToLength(prev, template.variables.body.count));
     setButtonVars((prev) => padToLength(prev, template.variables.buttons.length));
   }, [template]);
+
+  // Media uploads are scoped to a phone number, so a previously uploaded document
+  // no longer applies once the sender changes.
+  useEffect(() => {
+    setHeaderDocument(null);
+  }, [phoneNumberId]);
 
   const grouped = useMemo(() => {
     const out: Record<string, MessageTemplate[]> = {};
@@ -99,25 +121,43 @@ export default function SendMessagePage() {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+
+    if (isDocumentHeader && !headerDocument) {
+      setError(MEDIA_MESSAGES.REQUIRED);
+      return;
+    }
+
     setSending(true);
     try {
+      const header = isDocumentHeader
+        ? headerDocument
+          ? [{ id: headerDocument.media_id, filename: headerDocument.file_name }]
+          : []
+        : headerVars;
+
       await companyApi.sendMessage({
         recipient_phone: recipient,
         template_id: templateId,
         phone_number_id: phoneNumberId || undefined,
         variables: {
-          ...(headerVars.length > 0 ? { header: headerVars } : {}),
+          ...(header.length > 0 ? { header } : {}),
           ...(bodyVars.length > 0 ? { body: bodyVars } : {}),
           ...(buttonVars.length > 0 ? { buttons: buttonVars } : {}),
         },
       });
       setSuccess('Message sent successfully');
       setRecipient('');
+      setHeaderDocument(null);
     } catch (err) {
       setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
     } finally {
       setSending(false);
     }
+  };
+
+  const uploadDocument = async (file: File) => {
+    const res = await mediaApi.uploadMessageDocument(file, phoneNumberId || undefined);
+    return res.data;
   };
 
   if (loading) {
@@ -224,7 +264,18 @@ export default function SendMessagePage() {
               </select>
             </div>
 
-            {template && template.variables.header && template.variables.header.count > 0 ? (
+            {template && isDocumentHeader ? (
+              <div className="space-y-2">
+                <Label>Document attachment (PDF)</Label>
+                <PdfUpload<MessageDocumentUploadResult>
+                  fileName={headerDocument?.file_name ?? null}
+                  upload={uploadDocument}
+                  onChange={(next) => setHeaderDocument(next?.result ?? null)}
+                />
+              </div>
+            ) : null}
+
+            {template && isTextHeader && template.variables.header!.count > 0 ? (
               <div className="space-y-2">
                 <Label>Header variables</Label>
                 {headerVars.map((v, i) => (

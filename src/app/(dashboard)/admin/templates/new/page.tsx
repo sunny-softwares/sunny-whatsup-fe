@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { ROUTES, UI_MESSAGES } from '@/constants';
 import { superAdminApi } from '@/lib/api/superAdmin.api';
+import { mediaApi } from '@/lib/api/media.api';
 import { pickErrorMessage } from '@/lib/utils';
 import type { CreateTemplateInput } from '@/types';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -34,6 +35,11 @@ function NewAdminTemplateInner() {
     router.push(backHref);
   };
 
+  const uploadDocument = async (file: File) => {
+    const res = await mediaApi.uploadCompanyTemplateDocument(companyId, file);
+    return res.data;
+  };
+
   if (!companyId) {
     return (
       <>
@@ -58,7 +64,11 @@ function NewAdminTemplateInner() {
           </Button>
         }
       />
-      <TemplateForm onSubmit={handleSubmit} onCancel={() => router.push(backHref)} />
+      <TemplateForm
+        onSubmit={handleSubmit}
+        onCancel={() => router.push(backHref)}
+        uploadDocument={uploadDocument}
+      />
     </>
   );
 }

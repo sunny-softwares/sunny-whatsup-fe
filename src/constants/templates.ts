@@ -36,6 +36,20 @@ export const TEMPLATE_HEADER_FORMAT = {
 } as const;
 export type TemplateHeaderFormat = (typeof TEMPLATE_HEADER_FORMAT)[keyof typeof TEMPLATE_HEADER_FORMAT];
 
+export const TEMPLATE_HEADER_FORMAT_LABEL: Record<TemplateHeaderFormat, string> = {
+  TEXT: 'Text',
+  IMAGE: 'Image',
+  VIDEO: 'Video',
+  DOCUMENT: 'Document (PDF)',
+  LOCATION: 'Location',
+};
+
+// Header formats currently offered in the template builder.
+export const SUPPORTED_HEADER_FORMATS: TemplateHeaderFormat[] = [
+  TEMPLATE_HEADER_FORMAT.TEXT,
+  TEMPLATE_HEADER_FORMAT.DOCUMENT,
+];
+
 export const TEMPLATE_BUTTON_TYPE = {
   QUICK_REPLY: 'QUICK_REPLY',
   URL: 'URL',

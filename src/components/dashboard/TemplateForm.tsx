@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { FileText, Plus, Trash2 } from 'lucide-react';
 import {
   DEFAULT_TEMPLATE_LANGUAGE,
   TEMPLATE_BUTTON_TYPE,
@@ -9,18 +9,28 @@ import {
   TEMPLATE_CATEGORY_LABEL,
   TEMPLATE_CATEGORY_VALUES,
   TEMPLATE_HEADER_FORMAT,
+  TEMPLATE_HEADER_FORMAT_LABEL,
   TEMPLATE_LANGUAGES,
+  SUPPORTED_HEADER_FORMATS,
+  MEDIA_MESSAGES,
   UI_MESSAGES,
   type TemplateButtonType,
   type TemplateCategory,
+  type TemplateHeaderFormat,
 } from '@/constants';
 import { pickErrorMessage } from '@/lib/utils';
-import type { CreateTemplateInput, TemplateButtonComponent } from '@/types';
+import { mediaApi } from '@/lib/api/media.api';
+import type {
+  CreateTemplateInput,
+  TemplateButtonComponent,
+  TemplateDocumentUploadResult,
+} from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { PdfUpload } from '@/components/dashboard/PdfUpload';
 
 const PLACEHOLDER_RE = /{{\s*(\d+)\s*}}/g;
 
@@ -44,16 +54,32 @@ interface TemplateFormProps {
   onSubmit: (payload: CreateTemplateInput) => Promise<void>;
   onCancel: () => void;
   submitLabel?: string;
+  // Overridable so the super admin can upload on behalf of a specific company.
+  uploadDocument?: (file: File) => Promise<TemplateDocumentUploadResult>;
 }
 
-export function TemplateForm({ onSubmit, onCancel, submitLabel = 'Submit to Meta' }: TemplateFormProps) {
+const defaultUploadDocument = async (file: File): Promise<TemplateDocumentUploadResult> => {
+  const res = await mediaApi.uploadTemplateDocument(file);
+  return res.data;
+};
+
+export function TemplateForm({
+  onSubmit,
+  onCancel,
+  submitLabel = 'Submit to Meta',
+  uploadDocument = defaultUploadDocument,
+}: TemplateFormProps) {
   const [name, setName] = useState('');
   const [language, setLanguage] = useState<string>(DEFAULT_TEMPLATE_LANGUAGE);
   const [category, setCategory] = useState<TemplateCategory>(TEMPLATE_CATEGORY.UTILITY);
 
   const [includeHeader, setIncludeHeader] = useState(false);
+  const [headerFormat, setHeaderFormat] = useState<TemplateHeaderFormat>(TEMPLATE_HEADER_FORMAT.TEXT);
   const [headerText, setHeaderText] = useState('');
   const [headerExamples, setHeaderExamples] = useState<string[]>([]);
+  // Uploaded document header sample: the Meta handle + display name.
+  const [headerHandle, setHeaderHandle] = useState<string | null>(null);
+  const [headerFileName, setHeaderFileName] = useState<string | null>(null);
 
   const [bodyText, setBodyText] = useState('');
   const [bodyExamples, setBodyExamples] = useState<string[]>([]);
@@ -118,12 +144,23 @@ export function TemplateForm({ onSubmit, onCancel, submitLabel = 'Submit to Meta
         },
       };
 
-      if (includeHeader && headerText.trim()) {
-        payload.header = {
-          format: TEMPLATE_HEADER_FORMAT.TEXT,
-          text: headerText,
-          ...(headerPlaceholders > 0 ? { examples: headerExamplesSized } : {}),
-        };
+      if (includeHeader) {
+        if (headerFormat === TEMPLATE_HEADER_FORMAT.DOCUMENT) {
+          if (!headerHandle) {
+            setError(MEDIA_MESSAGES.REQUIRED);
+            return;
+          }
+          payload.header = {
+            format: TEMPLATE_HEADER_FORMAT.DOCUMENT,
+            header_handle: headerHandle,
+          };
+        } else if (headerText.trim()) {
+          payload.header = {
+            format: TEMPLATE_HEADER_FORMAT.TEXT,
+            text: headerText,
+            ...(headerPlaceholders > 0 ? { examples: headerExamplesSized } : {}),
+          };
+        }
       }
 
       if (includeFooter && footerText.trim()) {
@@ -207,7 +244,9 @@ export function TemplateForm({ onSubmit, onCancel, submitLabel = 'Submit to Meta
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Header (optional)</CardTitle>
-            <CardDescription>A short text shown above the body. Up to 60 characters.</CardDescription>
+            <CardDescription>
+              A text line shown above the body, or a PDF document attachment.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <label className="flex items-center gap-2 text-sm">
@@ -216,33 +255,75 @@ export function TemplateForm({ onSubmit, onCancel, submitLabel = 'Submit to Meta
                 checked={includeHeader}
                 onChange={(e) => setIncludeHeader(e.target.checked)}
               />
-              Include a text header
+              Include a header
             </label>
             {includeHeader ? (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="header_text">Header text</Label>
-                  <Input
-                    id="header_text"
-                    maxLength={60}
-                    value={headerText}
-                    onChange={(e) => setHeaderText(e.target.value)}
-                    placeholder="e.g. Hello {{1}}"
-                  />
-                </div>
-                {headerPlaceholders > 0 ? (
-                  <div className="space-y-2">
-                    <Label>Header examples</Label>
-                    {headerExamplesSized.map((ex, i) => (
-                      <Input
-                        key={i}
-                        placeholder={`Example value for {{${i + 1}}}`}
-                        value={ex}
-                        onChange={(e) => updateExampleArray(setHeaderExamples, headerExamplesSized, i, e.target.value)}
-                      />
+                  <Label>Header type</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {SUPPORTED_HEADER_FORMATS.map((fmt) => (
+                      <button
+                        key={fmt}
+                        type="button"
+                        onClick={() => setHeaderFormat(fmt)}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                          headerFormat === fmt
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-input bg-background text-muted-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {TEMPLATE_HEADER_FORMAT_LABEL[fmt]}
+                      </button>
                     ))}
                   </div>
-                ) : null}
+                </div>
+
+                {headerFormat === TEMPLATE_HEADER_FORMAT.TEXT ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="header_text">Header text</Label>
+                      <Input
+                        id="header_text"
+                        maxLength={60}
+                        value={headerText}
+                        onChange={(e) => setHeaderText(e.target.value)}
+                        placeholder="e.g. Hello {{1}}"
+                      />
+                    </div>
+                    {headerPlaceholders > 0 ? (
+                      <div className="space-y-2">
+                        <Label>Header examples</Label>
+                        {headerExamplesSized.map((ex, i) => (
+                          <Input
+                            key={i}
+                            placeholder={`Example value for {{${i + 1}}}`}
+                            value={ex}
+                            onChange={(e) =>
+                              updateExampleArray(setHeaderExamples, headerExamplesSized, i, e.target.value)
+                            }
+                          />
+                        ))}
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Sample document</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Meta reviews templates with a sample file. When sending, each message
+                      attaches its own PDF.
+                    </p>
+                    <PdfUpload<TemplateDocumentUploadResult>
+                      fileName={headerFileName}
+                      upload={uploadDocument}
+                      onChange={(next) => {
+                        setHeaderHandle(next?.result.header_handle ?? null);
+                        setHeaderFileName(next?.fileName ?? null);
+                      }}
+                    />
+                  </div>
+                )}
               </>
             ) : null}
           </CardContent>
@@ -386,7 +467,13 @@ export function TemplateForm({ onSubmit, onCancel, submitLabel = 'Submit to Meta
           </CardHeader>
           <CardContent>
             <div className="rounded-lg border bg-emerald-50 p-3 text-sm">
-              {includeHeader && headerText ? (
+              {includeHeader && headerFormat === TEMPLATE_HEADER_FORMAT.DOCUMENT && headerFileName ? (
+                <div className="mb-2 flex items-center gap-2 rounded border border-emerald-200 bg-background px-2 py-1.5 text-xs">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span className="truncate">{headerFileName}</span>
+                </div>
+              ) : null}
+              {includeHeader && headerFormat === TEMPLATE_HEADER_FORMAT.TEXT && headerText ? (
                 <div className="mb-2 font-semibold">{headerText}</div>
               ) : null}
               <div className="whitespace-pre-wrap text-foreground">

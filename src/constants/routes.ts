@@ -47,6 +47,8 @@ export const API_ROUTES = {
       `/super-admin/companies/${companyId}/templates/${id}`,
     COMPANY_TEMPLATES_SYNC: (companyId: string) =>
       `/super-admin/companies/${companyId}/templates/sync`,
+    COMPANY_MEDIA_TEMPLATE_DOCUMENT: (companyId: string) =>
+      `/super-admin/companies/${companyId}/media/template-document`,
   },
   COMPANY: {
     ME: '/company/me',
@@ -58,5 +60,7 @@ export const API_ROUTES = {
     TEMPLATES: '/company/templates',
     TEMPLATE: (id: string) => `/company/templates/${id}`,
     TEMPLATES_SYNC: '/company/templates/sync',
+    MEDIA_TEMPLATE_DOCUMENT: '/company/media/template-document',
+    MEDIA_MESSAGE_DOCUMENT: '/company/media/message-document',
   },
 } as const;
