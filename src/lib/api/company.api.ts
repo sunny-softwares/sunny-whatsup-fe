@@ -77,4 +77,22 @@ export const companyApi = {
     >(API_ROUTES.COMPANY.MESSAGES, { params });
     return data;
   },
+  async deleteAccount() {
+    const { data } = await apiClient.delete<
+      ApiResponseSuccess<{
+        deleted: boolean;
+        company_id: string;
+        purged: {
+          users: number;
+          waba_accounts: number;
+          phone_numbers: number;
+          templates: number;
+          messages: number;
+          audit_logs: number;
+          archive_events: number;
+        };
+      }>
+    >(API_ROUTES.COMPANY.ACCOUNT);
+    return data;
+  },
 };

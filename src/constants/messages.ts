@@ -118,6 +118,14 @@ export const UI_MESSAGES = {
     CHANGE_PASSWORD_BUTTON: 'Change password',
     PASSWORD_CHANGED: 'Password changed successfully',
     PASSWORD_MISMATCH: 'New password and confirmation do not match',
+    DANGER_ZONE_TITLE: 'Danger zone',
+    DELETE_ACCOUNT_TITLE: 'Delete account',
+    DELETE_ACCOUNT_SUBTITLE:
+      'Permanently delete your company and all of its data — WhatsApp connection, templates, messages, and team members. This action cannot be undone.',
+    DELETE_ACCOUNT_BUTTON: 'Delete account',
+    DELETE_ACCOUNT_CONFIRM:
+      'This will permanently delete your company and ALL of its data — WhatsApp connection, templates, message history, and all users. This cannot be undone.\n\nAre you absolutely sure?',
+    DELETE_ACCOUNT_SUCCESS: 'Your account and all data have been deleted.',
   },
   COMMON: {
     LOADING: 'Loading…',

@@ -52,6 +52,7 @@ export const API_ROUTES = {
   },
   COMPANY: {
     ME: '/company/me',
+    ACCOUNT: '/company/account',
     STATS: '/company/stats',
     WABA: '/company/waba',
     WABA_CONNECT: '/company/waba/connect',

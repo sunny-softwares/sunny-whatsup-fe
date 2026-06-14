@@ -723,23 +723,32 @@ export default function PrivacyPolicyPage() {
 
         <SubHeading>12.2 Account Deletion</SubHeading>
         <p>
-          To request deletion of your account and associated data, please contact us at{' '}
-          <a href={`mailto:${LEGAL.CONTACT_EMAIL}`}>{LEGAL.CONTACT_EMAIL}</a>. Upon verified
-          request:
+          <strong>Self-service deletion.</strong> A Company Admin can permanently delete their
+          company at any time from <strong>Settings → Security → Delete account</strong>. After
+          an in-app confirmation, this action immediately and irreversibly{' '}
+          <strong>hard-deletes</strong> all of the company&apos;s data from our database,
+          including:
         </p>
         <ul>
-          <li>
-            Your user account will be deactivated and all personally identifiable information
-            will be anonymised or deleted within 30 days
-          </li>
-          <li>
-            Company data will be deleted subject to the retention requirements for audit logs
-            described above
-          </li>
-          <li>
-            We may retain anonymised, aggregated statistics that cannot be linked back to you
-          </li>
+          <li>The company record and all of its user accounts</li>
+          <li>The WABA account record and its encrypted access token</li>
+          <li>All associated phone numbers</li>
+          <li>All message templates</li>
+          <li>All message logs and delivery history</li>
+          <li>All audit logs and any data archive snapshots for the company</li>
         </ul>
+        <p>
+          This deletion cannot be undone, no recovery copy or archive is retained, and the
+          deletion takes effect immediately rather than over a 30-day window. We may retain
+          anonymised, aggregated statistics that cannot be linked back to you, and a minimal
+          non-identifying application log noting that a deletion occurred.
+        </p>
+        <p>
+          <strong>Deletion by request.</strong> Alternatively, you may request deletion by
+          contacting us at{' '}
+          <a href={`mailto:${LEGAL.CONTACT_EMAIL}`}>{LEGAL.CONTACT_EMAIL}</a>, and we will carry
+          out the same permanent deletion on your behalf upon verified request.
+        </p>
 
         <SubHeading>12.3 WABA Disconnect and Automatic Cleanup</SubHeading>
         <p>
