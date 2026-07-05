@@ -5,22 +5,19 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ROUTES, UI_MESSAGES } from '@/constants';
 import { superAdminApi } from '@/lib/api/superAdmin.api';
 import { pickErrorMessage } from '@/lib/utils';
-import type { Company, MessageTemplate } from '@/types';
-import { TemplatesView, type TemplatesApi } from '@/components/dashboard/TemplatesView';
-import { CurlDialog } from '@/components/dashboard/CurlDialog';
+import type { Company } from '@/types';
+import { WabaView, type WabaViewApi } from '@/components/dashboard/WabaView';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 
 const COMPANY_QUERY_KEY = 'companyId';
 
-function AdminTemplatesInner() {
+function AdminWabaInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const companyId = searchParams.get(COMPANY_QUERY_KEY) ?? '';
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [error, setError] = useState<string | null>(null);
-  // Template whose send-message curl snippet is being shown.
-  const [curlTemplate, setCurlTemplate] = useState<MessageTemplate | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -39,14 +36,22 @@ function AdminTemplatesInner() {
     const params = new URLSearchParams(searchParams.toString());
     if (id) params.set(COMPANY_QUERY_KEY, id);
     else params.delete(COMPANY_QUERY_KEY);
-    router.replace(`${ROUTES.ADMIN.TEMPLATES}?${params.toString()}`);
+    router.replace(`${ROUTES.ADMIN.WABA}?${params.toString()}`);
   };
 
-  const api: TemplatesApi = useMemo(
+  const api: WabaViewApi = useMemo(
     () => ({
-      list: (params) => superAdminApi.listCompanyTemplates(companyId, params),
-      sync: () => superAdminApi.syncCompanyTemplates(companyId),
-      remove: (id) => superAdminApi.removeCompanyTemplate(companyId, id),
+      getWaba: () => superAdminApi.getCompanyWaba(companyId),
+      connectWaba: (payload) => superAdminApi.connectCompanyWaba(companyId, payload),
+      disconnectWaba: () => superAdminApi.disconnectCompanyWaba(companyId),
+      syncWaba: () => superAdminApi.syncCompanyWaba(companyId),
+      listTemplates: (params) => superAdminApi.listCompanyTemplates(companyId, params),
+      listMessages: (params) => superAdminApi.listCompanyMessages(companyId, params),
+      requestPhoneCode: (phoneId, codeMethod) =>
+        superAdminApi.requestCompanyPhoneCode(companyId, phoneId, { code_method: codeMethod }),
+      verifyPhoneCode: (phoneId, code) =>
+        superAdminApi.verifyCompanyPhoneCode(companyId, phoneId, code),
+      registerPhone: (phoneId, pin) => superAdminApi.registerCompanyPhone(companyId, phoneId, pin),
     }),
     [companyId],
   );
@@ -67,31 +72,22 @@ function AdminTemplatesInner() {
   );
 
   return (
-    <>
-      <TemplatesView
-        title={UI_MESSAGES.ADMIN.TEMPLATES_TITLE}
-        description={UI_MESSAGES.ADMIN.TEMPLATES_SUBTITLE}
-        createHref={`${ROUTES.ADMIN.TEMPLATES_NEW}?${COMPANY_QUERY_KEY}=${companyId}`}
-        api={api}
-        ready={!!companyId}
-        notReadyMessage={UI_MESSAGES.ADMIN.NO_COMPANY_SELECTED}
-        reloadKey={companyId}
-        toolbarStart={companySelector}
-        onCopyCurl={setCurlTemplate}
-      />
-      <CurlDialog
-        template={curlTemplate}
-        companyId={companyId}
-        onClose={() => setCurlTemplate(null)}
-      />
-    </>
+    <WabaView
+      title={UI_MESSAGES.ADMIN.WABA_TITLE}
+      description={UI_MESSAGES.ADMIN.WABA_SUBTITLE}
+      api={api}
+      ready={!!companyId}
+      notReadyMessage={UI_MESSAGES.ADMIN.NO_COMPANY_SELECTED_WABA}
+      reloadKey={companyId}
+      toolbarStart={companySelector}
+    />
   );
 }
 
-export default function AdminTemplatesPage() {
+export default function AdminWabaPage() {
   return (
     <Suspense fallback={<p className="text-muted-foreground">{UI_MESSAGES.COMMON.LOADING}</p>}>
-      <AdminTemplatesInner />
+      <AdminWabaInner />
     </Suspense>
   );
 }

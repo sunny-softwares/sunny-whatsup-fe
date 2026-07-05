@@ -47,6 +47,11 @@ export interface PhoneNumber {
   verified_name: string | null;
   quality_rating: string | null;
   status: string;
+  // Meta-reported Cloud API onboarding state: ownership verification
+  // (VERIFIED / NOT_VERIFIED / EXPIRED) and registration platform
+  // (CLOUD_API / ON_PREMISE / NOT_APPLICABLE).
+  code_verification_status: string | null;
+  platform_type: string | null;
   is_default: boolean;
 }
 
@@ -80,6 +85,48 @@ export interface MessageLog {
   failed_at: string | null;
   created_at: string;
   phoneNumber?: { id: string; display_phone_number: string; phone_number_id: string } | null;
+}
+
+export interface ApiToken {
+  id: string;
+  company_id: string;
+  company: { id: string; name: string } | null;
+  // Displayable fragment (swt_12ab…89cd); the plaintext is never retrievable.
+  token_hint: string;
+  scopes: string[];
+  created_by_user_id: string | null;
+  last_used_at: string | null;
+  rotated_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Returned by create/rotate: `token` is the plaintext credential.
+export interface ApiTokenSecretResult {
+  token: string;
+  api_token: ApiToken;
+}
+
+// Returned by reveal: `token` is null for tokens issued before encrypted
+// storage existed (they must be rotated to become revealable).
+export interface ApiTokenRevealResult {
+  token: string | null;
+  api_token: ApiToken;
+}
+
+// Row in the super admin API token management table: an active company with
+// its token, or null when none has been issued yet.
+export interface ApiTokenCompanyRow {
+  id: string;
+  name: string;
+  apiToken: ApiToken | null;
+}
+
+export interface ApiTokenListParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  company_id?: string;
 }
 
 export interface Pagination {

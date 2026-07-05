@@ -27,6 +27,9 @@ export const UI_MESSAGES = {
     NEW_TEMPLATE_TITLE: 'Create new template',
     CONNECT_WABA: 'Connect Meta WABA',
     CONNECT_WABA_HINT: 'Connect your Meta WhatsApp Business Account via Embedded Signup.',
+    WABA_SYNC: 'Sync from Meta',
+    WABA_SYNCING: 'Syncing…',
+    WABA_SYNCED: 'WABA state refreshed from Meta.',
     NO_WABA_YET:
       'You have not connected a Meta WABA yet. Connect one to start sending WhatsApp messages.',
     NO_TEMPLATES_YET:
@@ -51,9 +54,80 @@ export const UI_MESSAGES = {
     MESSAGES_TITLE: 'All Messages',
     TEMPLATES_TITLE: 'Company Templates',
     TEMPLATES_SUBTITLE: 'Select a company to manage its message templates on its behalf.',
+    WABA_TITLE: 'Company WhatsApp Account',
+    WABA_SUBTITLE:
+      'Select a company to manage its Meta WhatsApp Business Account on its behalf.',
     SELECT_COMPANY_LABEL: 'Company',
     SELECT_COMPANY_PLACEHOLDER: 'Select a company…',
     NO_COMPANY_SELECTED: 'Select a company above to view and manage its templates.',
+    NO_COMPANY_SELECTED_WABA:
+      'Select a company above to view and manage its WhatsApp Business Account.',
+  },
+  API_TOKEN: {
+    TITLE: 'API Tokens',
+    SUBTITLE:
+      'Issue one API token per company for machine-to-machine access (currently the send-message API). Rotate or delete a token at any time.',
+    NAV_LABEL: 'API Tokens',
+    COL_TOKEN: 'Token',
+    COL_SCOPES: 'Scopes',
+    COL_LAST_USED: 'Last used',
+    NO_TOKEN: 'No token',
+    NEVER_USED: 'Never',
+    CREATE: 'Create token',
+    ROTATE: 'Rotate',
+    DELETE: 'Delete',
+    CREATED_TITLE: 'API token created',
+    ROTATED_TITLE: 'API token rotated',
+    REVEAL_HINT:
+      'Copy this token now and share it with the company through a secure channel. For security reasons it will never be shown again.',
+    COPY: 'Copy',
+    COPIED: 'Copied!',
+    DONE: 'Done',
+    ROTATE_CONFIRM_TITLE: 'Rotate this API token?',
+    ROTATE_CONFIRM:
+      'The current token stops working immediately and a new one is generated. Any integration using the old token will fail until it is updated.',
+    DELETE_CONFIRM_TITLE: 'Delete this API token?',
+    DELETE_CONFIRM:
+      'The token stops working immediately and the company loses API access until a new token is created.',
+    COPY_TOKEN: 'Copy token',
+    NOT_REVEALABLE:
+      'This token was created before secure copy was supported. Rotate it to get a copyable token.',
+  },
+  CURL: {
+    COL_API: 'API',
+    COPY_CURL: 'Copy curl',
+    TITLE: 'Send-message API request',
+    HINT: 'Replace the placeholder values (recipient phone, template variables) before running. The Authorization header already contains this company’s API token — share it only with the company.',
+    DOCUMENT_HINT:
+      'This template has a document header: replace <MEDIA_ID> with a media id from a message-document upload, and the filename shown to the recipient.',
+    NO_TOKEN: 'No API token found for this company. Please create the API token first.',
+  },
+  PHONE: {
+    COL_REGISTRATION: 'Cloud API',
+    REGISTERED: 'Registered',
+    VERIFY: 'Verify',
+    REGISTER: 'Register',
+    VERIFY_TITLE: 'Verify phone number',
+    VERIFY_DESCRIPTION:
+      'This number has not been verified with Meta yet. Request a verification code, then enter it below to confirm ownership.',
+    CODE_METHOD_LABEL: 'Send code via',
+    SEND_CODE: 'Send code',
+    SENDING_CODE: 'Sending…',
+    CODE_SENT: 'Code sent. It may take a minute to arrive.',
+    CODE_LABEL: 'Verification code',
+    CODE_PLACEHOLDER: '6-digit code',
+    VERIFY_SUBMIT: 'Verify number',
+    VERIFYING: 'Verifying…',
+    VERIFIED_SUCCESS: 'Phone number verified successfully.',
+    REGISTER_TITLE: 'Register with Cloud API',
+    REGISTER_DESCRIPTION:
+      'Registering activates this number for sending and receiving messages via the WhatsApp Cloud API. The 6-digit PIN sets — or must match — the number’s two-step verification PIN.',
+    PIN_LABEL: 'Two-step verification PIN',
+    PIN_PLACEHOLDER: '6-digit PIN',
+    REGISTER_SUBMIT: 'Register number',
+    REGISTERING: 'Registering…',
+    REGISTERED_SUCCESS: 'Phone number registered with the Cloud API.',
+    INVALID_PIN: 'Enter a 6-digit number.',
   },
   TEMPLATE: {
     DETAILS_TITLE: 'Template details',
@@ -129,6 +203,8 @@ export const UI_MESSAGES = {
   },
   COMMON: {
     LOADING: 'Loading…',
+    NO_MATCHES: 'No matches found',
+    CLEAR_SELECTION: 'Clear selection',
     SAVE: 'Save',
     CANCEL: 'Cancel',
     SUBMIT: 'Submit',

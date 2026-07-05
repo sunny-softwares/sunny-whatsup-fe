@@ -8,6 +8,7 @@ import type {
   MessageListParams,
   MessageLog,
   Pagination,
+  PhoneNumber,
   WabaAccount,
 } from '@/types';
 
@@ -16,6 +17,11 @@ export interface ConnectWabaPayload {
   access_token?: string;
   waba_id?: string;
   redirect_uri?: string;
+}
+
+export interface RequestPhoneCodePayload {
+  code_method?: string;
+  language?: string;
 }
 
 export interface SendMessagePayload {
@@ -62,6 +68,32 @@ export const companyApi = {
         };
       }>
     >(API_ROUTES.COMPANY.WABA_DISCONNECT);
+    return data;
+  },
+  async syncWaba() {
+    const { data } = await apiClient.post<ApiResponseSuccess<WabaAccount>>(
+      API_ROUTES.COMPANY.WABA_SYNC,
+    );
+    return data;
+  },
+  async requestPhoneCode(phoneId: string, payload: RequestPhoneCodePayload = {}) {
+    const { data } = await apiClient.post<
+      ApiResponseSuccess<{ requested: boolean; code_method: string }>
+    >(API_ROUTES.COMPANY.WABA_PHONE_REQUEST_CODE(phoneId), payload);
+    return data;
+  },
+  async verifyPhoneCode(phoneId: string, code: string) {
+    const { data } = await apiClient.post<ApiResponseSuccess<PhoneNumber>>(
+      API_ROUTES.COMPANY.WABA_PHONE_VERIFY_CODE(phoneId),
+      { code },
+    );
+    return data;
+  },
+  async registerPhone(phoneId: string, pin: string) {
+    const { data } = await apiClient.post<ApiResponseSuccess<PhoneNumber>>(
+      API_ROUTES.COMPANY.WABA_PHONE_REGISTER(phoneId),
+      { pin },
+    );
     return data;
   },
   async sendMessage(payload: SendMessagePayload) {

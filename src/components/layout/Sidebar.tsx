@@ -10,6 +10,7 @@ import {
   Send,
   History,
   FileText,
+  KeyRound,
   LogOut,
   Settings,
   Shield,
@@ -44,8 +45,10 @@ const COMPANY_NAV: NavItem[] = [
 const ADMIN_NAV: NavItem[] = [
   { label: 'Dashboard', href: ROUTES.ADMIN.DASHBOARD, icon: LayoutDashboard },
   { label: 'Companies', href: ROUTES.ADMIN.COMPANIES, icon: Building2 },
+  { label: 'Meta WABA', href: ROUTES.ADMIN.WABA, icon: Building2 },
   { label: 'Templates', href: ROUTES.ADMIN.TEMPLATES, icon: FileText },
   { label: 'All Messages', href: ROUTES.ADMIN.MESSAGES, icon: MessageSquare },
+  { label: UI_MESSAGES.API_TOKEN.NAV_LABEL, href: ROUTES.ADMIN.API_TOKENS, icon: KeyRound },
 ];
 
 const SETTINGS_GROUP: NavGroup = {

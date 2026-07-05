@@ -17,9 +17,11 @@ export const ROUTES = {
     ROOT: '/admin',
     DASHBOARD: '/admin/dashboard',
     COMPANIES: '/admin/companies',
+    WABA: '/admin/waba',
     MESSAGES: '/admin/messages',
     TEMPLATES: '/admin/templates',
     TEMPLATES_NEW: '/admin/templates/new',
+    API_TOKENS: '/admin/api-tokens',
   },
   SETTINGS: {
     ROOT: '/settings',
@@ -42,6 +44,23 @@ export const API_ROUTES = {
     REJECT: (id: string) => `/super-admin/companies/${id}/reject`,
     SET_ACTIVE: (id: string) => `/super-admin/companies/${id}/active`,
     MESSAGES: '/super-admin/messages',
+    COMPANY_WABA: (companyId: string) => `/super-admin/companies/${companyId}/waba`,
+    COMPANY_WABA_CONNECT: (companyId: string) =>
+      `/super-admin/companies/${companyId}/waba/connect`,
+    COMPANY_WABA_DISCONNECT: (companyId: string) =>
+      `/super-admin/companies/${companyId}/waba/disconnect`,
+    COMPANY_WABA_SYNC: (companyId: string) => `/super-admin/companies/${companyId}/waba/sync`,
+    COMPANY_WABA_PHONE_REQUEST_CODE: (companyId: string, id: string) =>
+      `/super-admin/companies/${companyId}/waba/phone-numbers/${id}/request-code`,
+    COMPANY_WABA_PHONE_VERIFY_CODE: (companyId: string, id: string) =>
+      `/super-admin/companies/${companyId}/waba/phone-numbers/${id}/verify-code`,
+    COMPANY_WABA_PHONE_REGISTER: (companyId: string, id: string) =>
+      `/super-admin/companies/${companyId}/waba/phone-numbers/${id}/register`,
+    COMPANY_MESSAGES: (companyId: string) => `/super-admin/companies/${companyId}/messages`,
+    API_TOKENS: '/super-admin/api-tokens',
+    COMPANY_API_TOKEN: (companyId: string) => `/super-admin/companies/${companyId}/api-token`,
+    COMPANY_API_TOKEN_ROTATE: (companyId: string) =>
+      `/super-admin/companies/${companyId}/api-token/rotate`,
     COMPANY_TEMPLATES: (companyId: string) => `/super-admin/companies/${companyId}/templates`,
     COMPANY_TEMPLATE: (companyId: string, id: string) =>
       `/super-admin/companies/${companyId}/templates/${id}`,
@@ -57,6 +76,10 @@ export const API_ROUTES = {
     WABA: '/company/waba',
     WABA_CONNECT: '/company/waba/connect',
     WABA_DISCONNECT: '/company/waba/disconnect',
+    WABA_SYNC: '/company/waba/sync',
+    WABA_PHONE_REQUEST_CODE: (id: string) => `/company/waba/phone-numbers/${id}/request-code`,
+    WABA_PHONE_VERIFY_CODE: (id: string) => `/company/waba/phone-numbers/${id}/verify-code`,
+    WABA_PHONE_REGISTER: (id: string) => `/company/waba/phone-numbers/${id}/register`,
     MESSAGES: '/company/messages',
     TEMPLATES: '/company/templates',
     TEMPLATE: (id: string) => `/company/templates/${id}`,

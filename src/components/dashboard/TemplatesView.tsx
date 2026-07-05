@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Plus, RefreshCw, Terminal, Trash2 } from 'lucide-react';
 import {
   TEMPLATE_CATEGORY_LABEL,
   TEMPLATE_CATEGORY_VALUES,
@@ -53,6 +53,9 @@ interface TemplatesViewProps {
   reloadKey?: string;
   // Extra control rendered at the start of the filter bar (e.g. company selector).
   toolbarStart?: React.ReactNode;
+  // When provided, each row gets a "Copy curl" action (super admin: generates
+  // the external send-message API snippet for the template).
+  onCopyCurl?: (template: MessageTemplate) => void;
 }
 
 export function TemplatesView({
@@ -64,6 +67,7 @@ export function TemplatesView({
   notReadyMessage,
   reloadKey,
   toolbarStart,
+  onCopyCurl,
 }: TemplatesViewProps) {
   const apiRef = useRef(api);
   apiRef.current = api;
@@ -279,6 +283,7 @@ export function TemplatesView({
                       sort={sort}
                       onSort={handleSort}
                     />
+                    {onCopyCurl ? <TableHead>{UI_MESSAGES.CURL.COL_API}</TableHead> : null}
                     <TableHead className="text-right">{UI_MESSAGES.TABLE.COL_ACTIONS}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -302,6 +307,14 @@ export function TemplatesView({
                       <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                         {formatDate(t.created_at)}
                       </TableCell>
+                      {onCopyCurl ? (
+                        <TableCell>
+                          <Button size="sm" variant="outline" onClick={() => onCopyCurl(t)}>
+                            <Terminal className="mr-1.5 h-3.5 w-3.5" />
+                            {UI_MESSAGES.CURL.COPY_CURL}
+                          </Button>
+                        </TableCell>
+                      ) : null}
                       <TableCell className="text-right">
                         <Button
                           size="sm"
