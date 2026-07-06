@@ -2,6 +2,7 @@ import {
   CURL_PLACEHOLDERS,
   ENV,
   EXTERNAL_MESSAGES_PATH,
+  MEDIA,
   TEMPLATE_HEADER_FORMAT,
 } from '@/constants';
 import type { MessageHeaderVariable, MessageTemplate } from '@/types';
@@ -85,7 +86,9 @@ export const buildSendMessageCurl = ({
       lines.push(`  -F "variables=${escapeForCmd(JSON.stringify(variables))}" ^`);
     }
     lines.push(`  -F "filename=${CURL_PLACEHOLDERS.DOCUMENT_FILENAME}" ^`);
-    lines.push(`  -F "file=@${CURL_PLACEHOLDERS.FILE_PATH}"`);
+    // `;type=` is required: curl defaults file parts to application/octet-stream
+    // (it does not sniff .pdf), and the API only accepts application/pdf.
+    lines.push(`  -F "file=@${CURL_PLACEHOLDERS.FILE_PATH};type=${MEDIA.PDF_MIME_TYPE}"`);
     return lines.join('\n');
   }
 
