@@ -99,7 +99,7 @@ export const UI_MESSAGES = {
     TITLE: 'Send-message API request',
     HINT: 'Replace the placeholder values (recipient phone, template variables) before running. The Authorization header already contains this company’s API token — share it only with the company.',
     DOCUMENT_HINT:
-      'This template has a document header: replace <MEDIA_ID> with a media id from a message-document upload, and the filename shown to the recipient.',
+      'This template has a document header: attach the PDF via the file field — the API uploads it and sends the message in one call. The filename field is the document name the recipient sees.',
     NO_TOKEN: 'No API token found for this company. Please create the API token first.',
   },
   PHONE: {

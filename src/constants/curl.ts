@@ -8,6 +8,7 @@ export const CURL_PLACEHOLDERS = {
   HEADER_TEXT: (index: number) => `<HEADER_TEXT_${index}>`,
   MEDIA_ID: '<MEDIA_ID>',
   DOCUMENT_FILENAME: '<FILE_NAME.pdf>',
+  FILE_PATH: '<C:/path/to/file.pdf>',
   BODY_TEXT: (index: number) => `<BODY_TEXT_${index}>`,
   BUTTON_VALUE: (index: number) => `<BUTTON_URL_SUFFIX_${index}>`,
 } as const;

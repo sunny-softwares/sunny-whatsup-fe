@@ -17,9 +17,9 @@ interface SendMessageCurlBody {
 }
 
 // Derives the placeholder `variables` payload from a template's variable spec,
-// mirroring the shapes the send-message API expects for each section:
-// text header values, media header { id, filename }, body strings, and dynamic
-// URL button suffixes.
+// mirroring the shapes the send-message API expects for each section. The
+// header is skipped for DOCUMENT templates — those use the one-call multipart
+// flow where the attached file becomes the header.
 const buildVariablePlaceholders = (template: MessageTemplate) => {
   const spec = template.variables;
   const variables: NonNullable<SendMessageCurlBody['variables']> = {};
@@ -29,11 +29,7 @@ const buildVariablePlaceholders = (template: MessageTemplate) => {
       variables.header = Array.from({ length: spec.header.count }, (_, i) =>
         CURL_PLACEHOLDERS.HEADER_TEXT(i + 1),
       );
-    } else if (spec.header.format === TEMPLATE_HEADER_FORMAT.DOCUMENT) {
-      variables.header = [
-        { id: CURL_PLACEHOLDERS.MEDIA_ID, filename: CURL_PLACEHOLDERS.DOCUMENT_FILENAME },
-      ];
-    } else {
+    } else if (spec.header.format !== TEMPLATE_HEADER_FORMAT.DOCUMENT) {
       // Other media headers (image/video) take a Meta media id.
       variables.header = [{ id: CURL_PLACEHOLDERS.MEDIA_ID }];
     }
@@ -52,10 +48,21 @@ const buildVariablePlaceholders = (template: MessageTemplate) => {
   return Object.keys(variables).length > 0 ? variables : undefined;
 };
 
+// Escapes a JSON string for embedding inside a double-quoted CMD argument.
+const escapeForCmd = (json: string) => json.replace(/"/g, '\\"');
+
 /**
  * Builds a ready-to-run curl command for sending a message with the given
  * template via the external (API token) send-message endpoint. Placeholders
  * (<...>) mark the values the caller must substitute.
+ *
+ * Emitted in Windows CMD format: double-quoted arguments (inner JSON quotes
+ * escaped as \"), `^` line continuations, and each quoted argument kept on a
+ * single line — CMD cannot span a quoted string across lines.
+ *
+ * Templates with a document header get the one-call multipart variant: the
+ * PDF is attached as `file` and the API uploads + sends in a single request.
+ * All other templates get the plain JSON variant.
  */
 export const buildSendMessageCurl = ({
   token,
@@ -64,21 +71,35 @@ export const buildSendMessageCurl = ({
   token: string;
   template: MessageTemplate;
 }): string => {
+  const url = `${ENV.API_BASE_URL}${EXTERNAL_MESSAGES_PATH}`;
+  const variables = buildVariablePlaceholders(template);
+
+  if (template.variables?.header?.format === TEMPLATE_HEADER_FORMAT.DOCUMENT) {
+    const lines = [
+      `curl -X POST "${url}" ^`,
+      `  -H "Authorization: Bearer ${token}" ^`,
+      `  -F "recipient_phone=${CURL_PLACEHOLDERS.RECIPIENT_PHONE}" ^`,
+      `  -F "template_id=${template.id}" ^`,
+    ];
+    if (variables) {
+      lines.push(`  -F "variables=${escapeForCmd(JSON.stringify(variables))}" ^`);
+    }
+    lines.push(`  -F "filename=${CURL_PLACEHOLDERS.DOCUMENT_FILENAME}" ^`);
+    lines.push(`  -F "file=@${CURL_PLACEHOLDERS.FILE_PATH}"`);
+    return lines.join('\n');
+  }
+
   const body: SendMessageCurlBody = {
     recipient_phone: CURL_PLACEHOLDERS.RECIPIENT_PHONE,
     template_id: template.id,
   };
-  const variables = buildVariablePlaceholders(template);
   if (variables) body.variables = variables;
 
-  const url = `${ENV.API_BASE_URL}${EXTERNAL_MESSAGES_PATH}`;
-  const json = JSON.stringify(body, null, 2);
-
   return [
-    `curl -X POST '${url}' \\`,
-    `  -H 'Authorization: Bearer ${token}' \\`,
-    `  -H 'Content-Type: application/json' \\`,
-    `  -d '${json}'`,
+    `curl -X POST "${url}" ^`,
+    `  -H "Authorization: Bearer ${token}" ^`,
+    `  -H "Content-Type: application/json" ^`,
+    `  -d "${escapeForCmd(JSON.stringify(body))}"`,
   ].join('\n');
 };
 
