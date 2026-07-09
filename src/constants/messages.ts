@@ -128,6 +128,8 @@ export const UI_MESSAGES = {
     REGISTERING: 'Registering…',
     REGISTERED_SUCCESS: 'Phone number registered with the Cloud API.',
     INVALID_PIN: 'Enter a 6-digit number.',
+    APP_LINKED:
+      'Linked to the WhatsApp Business app (coexistence) — register directly; SMS verification would disconnect the app.',
   },
   TEMPLATE: {
     DETAILS_TITLE: 'Template details',
