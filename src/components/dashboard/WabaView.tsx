@@ -247,42 +247,44 @@ export function WabaView({
     setPhoneActionResult(UI_MESSAGES.PHONE.REGISTERED_SUCCESS);
   };
 
-  // Cloud API onboarding state of a phone number. Registered numbers need no
-  // action. Unregistered ones always get Register — coexistence numbers
-  // (verified via the WhatsApp Business app QR scan) never reach a VERIFIED
-  // code_verification_status, so gating Register behind it would strand them;
-  // Meta enforces its own prerequisites on the register call.
+  // Cloud API onboarding state of a phone number.
   //
-  // Verify (SMS/voice) is hidden for app-held numbers (platform_type
-  // ON_PREMISE): completing that flow is the classic dedicated-number takeover
-  // and would kick the number off the WhatsApp Business app.
+  // - CLOUD_API → registered, nothing to do.
+  // - ON_PREMISE → held by the WhatsApp Business app (coexistence). Meta
+  //   blocks both SMS verification (it would disconnect the app) and the
+  //   /register endpoint ("not available for SMB businesses") — activation
+  //   happens automatically when the signup's in-app step completes, so we
+  //   show guidance instead of actions.
+  // - otherwise → dedicated number: Verify (until Meta reports VERIFIED),
+  //   then Register.
   const renderRegistrationCell = (p: PhoneNumber) => {
     if (p.platform_type === PHONE_PLATFORM_TYPE.CLOUD_API) {
       return <Badge variant="success">{UI_MESSAGES.PHONE.REGISTERED}</Badge>;
     }
-    const isAppHeld = p.platform_type === PHONE_PLATFORM_TYPE.ON_PREMISE;
+    if (p.platform_type === PHONE_PLATFORM_TYPE.ON_PREMISE) {
+      return (
+        <p className="max-w-xs text-xs text-muted-foreground">
+          {UI_MESSAGES.PHONE.APP_LINKED}
+        </p>
+      );
+    }
     const needsVerify =
-      !isAppHeld && p.code_verification_status !== PHONE_CODE_VERIFICATION_STATUS.VERIFIED;
+      p.code_verification_status !== PHONE_CODE_VERIFICATION_STATUS.VERIFIED;
     return (
-      <div className="space-y-1">
-        <div className="flex flex-wrap gap-2">
-          {needsVerify ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setVerifyTarget(p)}
-              disabled={busy || syncing}
-            >
-              {UI_MESSAGES.PHONE.VERIFY}
-            </Button>
-          ) : null}
-          <Button size="sm" onClick={() => setRegisterTarget(p)} disabled={busy || syncing}>
-            {UI_MESSAGES.PHONE.REGISTER}
+      <div className="flex flex-wrap gap-2">
+        {needsVerify ? (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setVerifyTarget(p)}
+            disabled={busy || syncing}
+          >
+            {UI_MESSAGES.PHONE.VERIFY}
           </Button>
-        </div>
-        {isAppHeld ? (
-          <p className="text-xs text-muted-foreground">{UI_MESSAGES.PHONE.APP_LINKED}</p>
         ) : null}
+        <Button size="sm" onClick={() => setRegisterTarget(p)} disabled={busy || syncing}>
+          {UI_MESSAGES.PHONE.REGISTER}
+        </Button>
       </div>
     );
   };

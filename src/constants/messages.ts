@@ -129,7 +129,7 @@ export const UI_MESSAGES = {
     REGISTERED_SUCCESS: 'Phone number registered with the Cloud API.',
     INVALID_PIN: 'Enter a 6-digit number.',
     APP_LINKED:
-      'Linked to the WhatsApp Business app (coexistence) — register directly; SMS verification would disconnect the app.',
+      'Linked to the WhatsApp Business app (coexistence). Meta activates Cloud API automatically once the in-app signup step completes — if this stays inactive, reconnect via "Connect with Meta" and finish the step in the app.',
   },
   TEMPLATE: {
     DETAILS_TITLE: 'Template details',
