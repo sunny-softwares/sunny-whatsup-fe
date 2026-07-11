@@ -12,13 +12,22 @@ import {
   FileText,
   KeyRound,
   LogOut,
+  SlidersHorizontal,
   Settings,
   Shield,
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
-import { ROLES, ROUTES, UI_MESSAGES, ENV } from '@/constants';
+import {
+  COMPANY_FEATURE,
+  ROLES,
+  ROUTES,
+  UI_MESSAGES,
+  ENV,
+  type CompanyFeatureKey,
+} from '@/constants';
 import { useAuthStore } from '@/store/auth.store';
+import { useFeatureStore } from '@/store/feature.store';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -26,6 +35,9 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  // Company-side items are visible only when the super admin enabled this
+  // feature for the company. Admin items carry no feature key.
+  feature?: CompanyFeatureKey;
 }
 
 interface NavGroup {
@@ -35,16 +47,17 @@ interface NavGroup {
 }
 
 const COMPANY_NAV: NavItem[] = [
-  { label: 'Dashboard', href: ROUTES.COMPANY.DASHBOARD, icon: LayoutDashboard },
-  { label: 'Meta WABA', href: ROUTES.COMPANY.WABA, icon: Building2 },
-  { label: 'Templates', href: ROUTES.COMPANY.TEMPLATES, icon: FileText },
-  { label: 'Send Message', href: ROUTES.COMPANY.SEND_MESSAGE, icon: Send },
-  { label: 'Messages', href: ROUTES.COMPANY.MESSAGES, icon: History },
+  { label: 'Dashboard', href: ROUTES.COMPANY.DASHBOARD, icon: LayoutDashboard, feature: COMPANY_FEATURE.DASHBOARD },
+  { label: 'Meta WABA', href: ROUTES.COMPANY.WABA, icon: Building2, feature: COMPANY_FEATURE.WABA },
+  { label: 'Templates', href: ROUTES.COMPANY.TEMPLATES, icon: FileText, feature: COMPANY_FEATURE.TEMPLATES },
+  { label: 'Send Message', href: ROUTES.COMPANY.SEND_MESSAGE, icon: Send, feature: COMPANY_FEATURE.SEND_MESSAGE },
+  { label: 'Messages', href: ROUTES.COMPANY.MESSAGES, icon: History, feature: COMPANY_FEATURE.MESSAGES },
 ];
 
 const ADMIN_NAV: NavItem[] = [
   { label: 'Dashboard', href: ROUTES.ADMIN.DASHBOARD, icon: LayoutDashboard },
   { label: 'Companies', href: ROUTES.ADMIN.COMPANIES, icon: Building2 },
+  { label: UI_MESSAGES.FEATURES.NAV_LABEL, href: ROUTES.ADMIN.FEATURES, icon: SlidersHorizontal },
   { label: 'Meta WABA', href: ROUTES.ADMIN.WABA, icon: Building2 },
   { label: 'Templates', href: ROUTES.ADMIN.TEMPLATES, icon: FileText },
   { label: 'All Messages', href: ROUTES.ADMIN.MESSAGES, icon: MessageSquare },
@@ -68,8 +81,16 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const features = useFeatureStore((s) => s.features);
+  const clearFeatures = useFeatureStore((s) => s.clear);
 
-  const nav = user?.role === ROLES.SUPER_ADMIN ? ADMIN_NAV : COMPANY_NAV;
+  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
+  // Company items appear only once the feature map is loaded AND the feature
+  // is enabled — no flash of items that would immediately vanish.
+  const nav = isSuperAdmin
+    ? ADMIN_NAV
+    : COMPANY_NAV.filter((item) => !item.feature || features?.[item.feature]);
+  const showSettings = isSuperAdmin || !!features?.[COMPANY_FEATURE.SETTINGS];
 
   const isSettingsActive = pathname.startsWith(ROUTES.SETTINGS.ROOT);
   const [settingsOpen, setSettingsOpen] = useState(isSettingsActive);
@@ -79,6 +100,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   }, [isSettingsActive]);
 
   const handleLogout = () => {
+    clearFeatures();
     logout();
     router.replace(ROUTES.LOGIN);
   };
@@ -117,6 +139,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           );
         })}
 
+        {showSettings ? (
         <div className="pt-2">
           <button
             type="button"
@@ -158,6 +181,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             </div>
           ) : null}
         </div>
+        ) : null}
       </nav>
 
       <div className="border-t p-4">

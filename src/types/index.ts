@@ -129,6 +129,9 @@ export interface ApiTokenListParams {
   company_id?: string;
 }
 
+// Per-company feature flags: feature key → enabled. Missing keys are disabled.
+export type CompanyFeatures = Record<string, boolean>;
+
 export interface Pagination {
   page: number;
   pageSize: number;

@@ -22,6 +22,7 @@ export const ROUTES = {
     TEMPLATES: '/admin/templates',
     TEMPLATES_NEW: '/admin/templates/new',
     API_TOKENS: '/admin/api-tokens',
+    FEATURES: '/admin/features',
   },
   SETTINGS: {
     ROOT: '/settings',
@@ -58,6 +59,7 @@ export const API_ROUTES = {
       `/super-admin/companies/${companyId}/waba/phone-numbers/${id}/register`,
     COMPANY_MESSAGES: (companyId: string) => `/super-admin/companies/${companyId}/messages`,
     API_TOKENS: '/super-admin/api-tokens',
+    COMPANY_FEATURES: (companyId: string) => `/super-admin/companies/${companyId}/features`,
     COMPANY_API_TOKEN: (companyId: string) => `/super-admin/companies/${companyId}/api-token`,
     COMPANY_API_TOKEN_ROTATE: (companyId: string) =>
       `/super-admin/companies/${companyId}/api-token/rotate`,
@@ -71,6 +73,7 @@ export const API_ROUTES = {
   },
   COMPANY: {
     ME: '/company/me',
+    FEATURES: '/company/features',
     ACCOUNT: '/company/account',
     STATS: '/company/stats',
     WABA: '/company/waba',

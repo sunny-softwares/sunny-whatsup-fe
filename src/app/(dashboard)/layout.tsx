@@ -6,6 +6,7 @@ import { ROUTES, UI_MESSAGES } from '@/constants';
 import { useAuthStore } from '@/store/auth.store';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileTopBar } from '@/components/layout/MobileTopBar';
+import { FeatureGuard } from '@/components/layout/FeatureGuard';
 import { cn } from '@/lib/utils';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -74,7 +75,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex flex-1 flex-col overflow-hidden">
         <MobileTopBar onOpenMenu={() => setSidebarOpen(true)} />
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 md:py-8">{children}</div>
+          <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 md:py-8">
+            <FeatureGuard>{children}</FeatureGuard>
+          </div>
         </main>
       </div>
     </div>

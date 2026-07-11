@@ -10,3 +10,4 @@ export * from './legal';
 export * from './query';
 export * from './format';
 export * from './curl';
+export * from './features';

@@ -3,6 +3,7 @@ import { API_ROUTES } from '@/constants';
 import type {
   ApiResponseSuccess,
   Company,
+  CompanyFeatures,
   CompanyStats,
   MessageHeaderVariable,
   MessageListParams,
@@ -38,6 +39,12 @@ export interface SendMessagePayload {
 export const companyApi = {
   async me() {
     const { data } = await apiClient.get<ApiResponseSuccess<Company>>(API_ROUTES.COMPANY.ME);
+    return data;
+  },
+  async getFeatures() {
+    const { data } = await apiClient.get<ApiResponseSuccess<CompanyFeatures>>(
+      API_ROUTES.COMPANY.FEATURES,
+    );
     return data;
   },
   async stats() {

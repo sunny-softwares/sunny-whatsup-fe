@@ -63,6 +63,19 @@ export const UI_MESSAGES = {
     NO_COMPANY_SELECTED_WABA:
       'Select a company above to view and manage its WhatsApp Business Account.',
   },
+  FEATURES: {
+    TITLE: 'Company Features',
+    SUBTITLE:
+      'Control which product features each company can use. Disabled features disappear from the company’s sidebar and their APIs are blocked.',
+    NAV_LABEL: 'Features',
+    NO_COMPANY_SELECTED: 'Select a company above to manage its features.',
+    ENABLED: 'Enabled',
+    DISABLED: 'Disabled',
+    NOT_ENABLED_PAGE:
+      'This feature is not enabled for your company. Please contact the administrator.',
+    NONE_ENABLED:
+      'No features are enabled for your company yet. Please contact the administrator.',
+  },
   API_TOKEN: {
     TITLE: 'API Tokens',
     SUBTITLE:

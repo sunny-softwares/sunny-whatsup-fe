@@ -7,6 +7,7 @@ import type {
   ApiTokenRevealResult,
   ApiTokenSecretResult,
   Company,
+  CompanyFeatures,
   CompanyListParams,
   CreateTemplateInput,
   MessageListParams,
@@ -125,6 +126,21 @@ export const superAdminApi = {
     const { data } = await apiClient.post<ApiResponseSuccess<PhoneNumber>>(
       API_ROUTES.SUPER_ADMIN.COMPANY_WABA_PHONE_REGISTER(companyId, phoneId),
       { pin },
+    );
+    return data;
+  },
+
+  // Per-company feature flags.
+  async getCompanyFeatures(companyId: string) {
+    const { data } = await apiClient.get<ApiResponseSuccess<CompanyFeatures>>(
+      API_ROUTES.SUPER_ADMIN.COMPANY_FEATURES(companyId),
+    );
+    return data;
+  },
+  async setCompanyFeature(companyId: string, featureKey: string, isEnabled: boolean) {
+    const { data } = await apiClient.patch<ApiResponseSuccess<CompanyFeatures>>(
+      API_ROUTES.SUPER_ADMIN.COMPANY_FEATURES(companyId),
+      { feature_key: featureKey, is_enabled: isEnabled },
     );
     return data;
   },
