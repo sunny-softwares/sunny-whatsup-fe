@@ -62,6 +62,10 @@ export const UI_MESSAGES = {
     NO_COMPANY_SELECTED: 'Select a company above to view and manage its templates.',
     NO_COMPANY_SELECTED_WABA:
       'Select a company above to view and manage its WhatsApp Business Account.',
+    NO_COMPANY_SELECTED_BILLING: 'Select a company above to open its billing on Meta.',
+    BILLING_TITLE: 'Company Billing',
+    BILLING_SUBTITLE:
+      'Select a company to open its WhatsApp Business Account billing in Meta’s Billing Hub.',
   },
   FEATURES: {
     TITLE: 'Company Features',
@@ -195,6 +199,18 @@ export const UI_MESSAGES = {
     NEXT: 'Next',
     PAGE_OF: (page: number, totalPages: number) => `Page ${page} of ${totalPages}`,
     SHOWING: (count: number, total: number) => `Showing ${count} of ${total}`,
+  },
+  BILLING: {
+    TITLE: 'Billing',
+    SUBTITLE: 'Manage the payment method and balance for your WhatsApp Business Account.',
+    NAV_LABEL: 'Billing',
+    CARD_TITLE: 'Billing is managed by Meta',
+    CARD_DESCRIPTION:
+      'Meta bills your WhatsApp Business Account directly. Your outstanding balance, payment method, billing cycle, and invoices all live in Meta’s Billing Hub — sign in with the Facebook account that owns the WABA to view or update them.',
+    OPEN_BUTTON: 'Open Meta Billing Hub',
+    WABA_ID_LABEL: 'WhatsApp Business Account ID:',
+    NO_WABA:
+      'No WhatsApp Business Account is connected yet, so we can’t link to a specific account — the Billing Hub will open on your default business portfolio.',
   },
   SETTINGS: {
     TITLE: 'Settings',

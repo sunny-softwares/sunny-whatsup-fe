@@ -10,6 +10,7 @@ export const COMPANY_FEATURE = {
   TEMPLATES: 'templates',
   SEND_MESSAGE: 'send_message',
   MESSAGES: 'messages',
+  BILLING: 'billing',
   SETTINGS: 'settings',
 } as const;
 
@@ -42,6 +43,10 @@ export const COMPANY_FEATURE_META: Record<
     label: 'Messages',
     description: 'View message history and delivery statuses.',
   },
+  [COMPANY_FEATURE.BILLING]: {
+    label: 'Billing',
+    description: 'Link out to Meta’s Billing Hub to manage the WABA payment method and balance.',
+  },
   [COMPANY_FEATURE.SETTINGS]: {
     label: 'Settings',
     description: 'Account settings: change password, delete account.',
@@ -56,6 +61,7 @@ export const COMPANY_FEATURE_ROUTES: Record<string, CompanyFeatureKey> = {
   [ROUTES.COMPANY.TEMPLATES]: COMPANY_FEATURE.TEMPLATES,
   [ROUTES.COMPANY.SEND_MESSAGE]: COMPANY_FEATURE.SEND_MESSAGE,
   [ROUTES.COMPANY.MESSAGES]: COMPANY_FEATURE.MESSAGES,
+  [ROUTES.COMPANY.BILLING]: COMPANY_FEATURE.BILLING,
   [ROUTES.SETTINGS.ROOT]: COMPANY_FEATURE.SETTINGS,
 };
 
@@ -74,6 +80,7 @@ export const COMPANY_FEATURE_HOME_ROUTES: [CompanyFeatureKey, string][] = [
   [COMPANY_FEATURE.TEMPLATES, ROUTES.COMPANY.TEMPLATES],
   [COMPANY_FEATURE.SEND_MESSAGE, ROUTES.COMPANY.SEND_MESSAGE],
   [COMPANY_FEATURE.MESSAGES, ROUTES.COMPANY.MESSAGES],
+  [COMPANY_FEATURE.BILLING, ROUTES.COMPANY.BILLING],
   [COMPANY_FEATURE.SETTINGS, ROUTES.SETTINGS.SECURITY],
 ];
 

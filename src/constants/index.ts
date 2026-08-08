@@ -11,3 +11,4 @@ export * from './query';
 export * from './format';
 export * from './curl';
 export * from './features';
+export * from './billing';

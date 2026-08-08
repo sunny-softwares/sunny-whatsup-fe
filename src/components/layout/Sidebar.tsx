@@ -11,6 +11,7 @@ import {
   History,
   FileText,
   KeyRound,
+  CreditCard,
   LogOut,
   SlidersHorizontal,
   Settings,
@@ -52,6 +53,7 @@ const COMPANY_NAV: NavItem[] = [
   { label: 'Templates', href: ROUTES.COMPANY.TEMPLATES, icon: FileText, feature: COMPANY_FEATURE.TEMPLATES },
   { label: 'Send Message', href: ROUTES.COMPANY.SEND_MESSAGE, icon: Send, feature: COMPANY_FEATURE.SEND_MESSAGE },
   { label: 'Messages', href: ROUTES.COMPANY.MESSAGES, icon: History, feature: COMPANY_FEATURE.MESSAGES },
+  { label: UI_MESSAGES.BILLING.NAV_LABEL, href: ROUTES.COMPANY.BILLING, icon: CreditCard, feature: COMPANY_FEATURE.BILLING },
 ];
 
 const ADMIN_NAV: NavItem[] = [
@@ -62,6 +64,7 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Templates', href: ROUTES.ADMIN.TEMPLATES, icon: FileText },
   { label: 'All Messages', href: ROUTES.ADMIN.MESSAGES, icon: MessageSquare },
   { label: UI_MESSAGES.API_TOKEN.NAV_LABEL, href: ROUTES.ADMIN.API_TOKENS, icon: KeyRound },
+  { label: UI_MESSAGES.BILLING.NAV_LABEL, href: ROUTES.ADMIN.BILLING, icon: CreditCard },
 ];
 
 const SETTINGS_GROUP: NavGroup = {

@@ -12,6 +12,7 @@ export const ROUTES = {
     TEMPLATES_NEW: '/company/templates/new',
     SEND_MESSAGE: '/company/send-message',
     MESSAGES: '/company/messages',
+    BILLING: '/company/billing',
   },
   ADMIN: {
     ROOT: '/admin',
@@ -23,6 +24,7 @@ export const ROUTES = {
     TEMPLATES_NEW: '/admin/templates/new',
     API_TOKENS: '/admin/api-tokens',
     FEATURES: '/admin/features',
+    BILLING: '/admin/billing',
   },
   SETTINGS: {
     ROOT: '/settings',
