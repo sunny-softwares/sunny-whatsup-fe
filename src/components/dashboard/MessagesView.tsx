@@ -10,7 +10,7 @@ import {
   UI_MESSAGES,
   type SortOrder,
 } from '@/constants';
-import { cn, formatDate, pickErrorMessage } from '@/lib/utils';
+import { cn, formatDateTime, pickErrorMessage } from '@/lib/utils';
 import type { MessageListParams, MessageLog, Pagination as PaginationMeta } from '@/types';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -232,7 +232,7 @@ export function MessagesView({ title, description, showCompany = false, fetchMes
                 <TableBody>
                   {items.map((m) => (
                     <TableRow key={m.id}>
-                      <TableCell className="whitespace-nowrap">{formatDate(m.created_at)}</TableCell>
+                      <TableCell className="whitespace-nowrap">{formatDateTime(m.created_at)}</TableCell>
                       {showCompany ? (
                         <TableCell className="font-medium">{m.company?.name ?? '—'}</TableCell>
                       ) : (

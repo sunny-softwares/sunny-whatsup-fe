@@ -13,6 +13,13 @@ export function formatDate(value: string | Date | null | undefined): string {
   return new Intl.DateTimeFormat(DATE_FORMAT.LOCALE, DATE_FORMAT.OPTIONS).format(d);
 }
 
+export function formatDateTime(value: string | Date | null | undefined): string {
+  if (!value) return DATE_FORMAT.EMPTY;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return DATE_FORMAT.EMPTY;
+  return new Intl.DateTimeFormat(DATE_FORMAT.LOCALE, DATE_FORMAT.DATETIME_OPTIONS).format(d);
+}
+
 export function pickErrorMessage(err: unknown, fallback = 'Something went wrong'): string {
   if (!err) return fallback;
   if (typeof err === 'string') return err;
