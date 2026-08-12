@@ -117,6 +117,10 @@ export const UI_MESSAGES = {
     HINT: 'Replace the placeholder values (recipient phone, template variables) before running. The Authorization header already contains this company’s API token — share it only with the company.',
     DOCUMENT_HINT:
       'This template has a document header: attach the PDF via the file field — the API uploads it and sends the message in one call. The filename field is the document name the recipient sees.',
+    IMAGE_HINT:
+      'This template has an image header: attach a JPEG or PNG (max 1 MB) via the file field — the API uploads it and sends the message in one call.',
+    MEDIA_ID_HINT:
+      'This template has a media header: upload the file first and pass the returned media id as variables.header.',
     NO_TOKEN: 'No API token found for this company. Please create the API token first.',
   },
   PHONE: {

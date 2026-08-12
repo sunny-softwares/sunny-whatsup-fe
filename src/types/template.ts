@@ -58,7 +58,7 @@ export interface CreateTemplateInput {
     format: TemplateHeaderFormat;
     text?: string;
     examples?: string[];
-    // Resumable Upload API file handle for a media (DOCUMENT) header sample.
+    // Resumable Upload API file handle for a media (DOCUMENT/IMAGE) header sample.
     header_handle?: string;
   };
   body: {
@@ -69,14 +69,14 @@ export interface CreateTemplateInput {
   buttons?: TemplateButtonComponent[];
 }
 
-// A document attached to an outgoing message's header, referencing media uploaded
-// to Meta by id (never a public URL).
-export interface MessageDocumentParam {
+// A file attached to an outgoing message's header, referencing media uploaded to
+// Meta by id (never a public URL). `filename` is a document-only display name.
+export interface MessageMediaParam {
   id: string;
   filename?: string;
 }
 
-export type MessageHeaderVariable = string | MessageDocumentParam;
+export type MessageHeaderVariable = string | MessageMediaParam;
 
 export interface SendTemplateInput {
   recipient_phone: string;
@@ -89,17 +89,20 @@ export interface SendTemplateInput {
   };
 }
 
-// Returned by the template-document upload endpoint (Resumable Upload API).
-export interface TemplateDocumentUploadResult {
+// Returned by the template-media upload endpoint (Resumable Upload API).
+export interface TemplateMediaUploadResult {
   header_handle: string;
   file_name: string;
   mime_type: string;
+  // Header format the uploaded file maps to: PDF → DOCUMENT, JPEG/PNG → IMAGE.
+  header_format: TemplateHeaderFormat;
 }
 
-// Returned by the message-document upload endpoint (phone-number media store).
-export interface MessageDocumentUploadResult {
+// Returned by the message-media upload endpoint (phone-number media store).
+export interface MessageMediaUploadResult {
   media_id: string;
   file_name: string;
   mime_type: string;
+  header_format: TemplateHeaderFormat;
   phone_number_id: string;
 }

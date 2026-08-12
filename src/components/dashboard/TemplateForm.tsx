@@ -14,6 +14,7 @@ import {
   SUPPORTED_HEADER_FORMATS,
   MEDIA_MESSAGES,
   UI_MESSAGES,
+  isUploadableHeaderFormat,
   type TemplateButtonType,
   type TemplateCategory,
   type TemplateHeaderFormat,
@@ -23,14 +24,14 @@ import { mediaApi } from '@/lib/api/media.api';
 import type {
   CreateTemplateInput,
   TemplateButtonComponent,
-  TemplateDocumentUploadResult,
+  TemplateMediaUploadResult,
 } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { PdfUpload } from '@/components/dashboard/PdfUpload';
+import { MediaUpload } from '@/components/dashboard/MediaUpload';
 
 const PLACEHOLDER_RE = /{{\s*(\d+)\s*}}/g;
 
@@ -55,11 +56,11 @@ interface TemplateFormProps {
   onCancel: () => void;
   submitLabel?: string;
   // Overridable so the super admin can upload on behalf of a specific company.
-  uploadDocument?: (file: File) => Promise<TemplateDocumentUploadResult>;
+  uploadMedia?: (file: File) => Promise<TemplateMediaUploadResult>;
 }
 
-const defaultUploadDocument = async (file: File): Promise<TemplateDocumentUploadResult> => {
-  const res = await mediaApi.uploadTemplateDocument(file);
+const defaultUploadMedia = async (file: File): Promise<TemplateMediaUploadResult> => {
+  const res = await mediaApi.uploadTemplateMedia(file);
   return res.data;
 };
 
@@ -67,7 +68,7 @@ export function TemplateForm({
   onSubmit,
   onCancel,
   submitLabel = 'Submit to Meta',
-  uploadDocument = defaultUploadDocument,
+  uploadMedia = defaultUploadMedia,
 }: TemplateFormProps) {
   const [name, setName] = useState('');
   const [language, setLanguage] = useState<string>(DEFAULT_TEMPLATE_LANGUAGE);
@@ -77,9 +78,11 @@ export function TemplateForm({
   const [headerFormat, setHeaderFormat] = useState<TemplateHeaderFormat>(TEMPLATE_HEADER_FORMAT.TEXT);
   const [headerText, setHeaderText] = useState('');
   const [headerExamples, setHeaderExamples] = useState<string[]>([]);
-  // Uploaded document header sample: the Meta handle + display name.
+  // Uploaded media header sample: the Meta handle, display name and (for images)
+  // a local object URL used by the preview panel.
   const [headerHandle, setHeaderHandle] = useState<string | null>(null);
   const [headerFileName, setHeaderFileName] = useState<string | null>(null);
+  const [headerPreviewUrl, setHeaderPreviewUrl] = useState<string | null>(null);
 
   const [bodyText, setBodyText] = useState('');
   const [bodyExamples, setBodyExamples] = useState<string[]>([]);
@@ -129,6 +132,16 @@ export function TemplateForm({
 
   const removeButton = (index: number) => setButtons(buttons.filter((_, i) => i !== index));
 
+  // A sample uploaded for one media format cannot be reused for another, so
+  // switching the header type drops it.
+  const changeHeaderFormat = (next: TemplateHeaderFormat) => {
+    if (next === headerFormat) return;
+    setHeaderFormat(next);
+    setHeaderHandle(null);
+    setHeaderFileName(null);
+    setHeaderPreviewUrl(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -145,13 +158,13 @@ export function TemplateForm({
       };
 
       if (includeHeader) {
-        if (headerFormat === TEMPLATE_HEADER_FORMAT.DOCUMENT) {
+        if (isUploadableHeaderFormat(headerFormat)) {
           if (!headerHandle) {
-            setError(MEDIA_MESSAGES.REQUIRED);
+            setError(MEDIA_MESSAGES.REQUIRED[headerFormat]);
             return;
           }
           payload.header = {
-            format: TEMPLATE_HEADER_FORMAT.DOCUMENT,
+            format: headerFormat,
             header_handle: headerHandle,
           };
         } else if (headerText.trim()) {
@@ -245,7 +258,7 @@ export function TemplateForm({
           <CardHeader>
             <CardTitle className="text-base">Header (optional)</CardTitle>
             <CardDescription>
-              A text line shown above the body, or a PDF document attachment.
+              A text line shown above the body, or a PDF / image attachment.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -266,7 +279,7 @@ export function TemplateForm({
                       <button
                         key={fmt}
                         type="button"
-                        onClick={() => setHeaderFormat(fmt)}
+                        onClick={() => changeHeaderFormat(fmt)}
                         className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                           headerFormat === fmt
                             ? 'border-primary bg-primary text-primary-foreground'
@@ -307,23 +320,29 @@ export function TemplateForm({
                       </div>
                     ) : null}
                   </>
-                ) : (
+                ) : isUploadableHeaderFormat(headerFormat) ? (
                   <div className="space-y-2">
-                    <Label>Sample document</Label>
+                    <Label>
+                      {headerFormat === TEMPLATE_HEADER_FORMAT.IMAGE
+                        ? 'Sample image'
+                        : 'Sample document'}
+                    </Label>
                     <p className="text-xs text-muted-foreground">
                       Meta reviews templates with a sample file. When sending, each message
-                      attaches its own PDF.
+                      attaches its own file.
                     </p>
-                    <PdfUpload<TemplateDocumentUploadResult>
+                    <MediaUpload<TemplateMediaUploadResult>
+                      format={headerFormat}
                       fileName={headerFileName}
-                      upload={uploadDocument}
+                      upload={uploadMedia}
                       onChange={(next) => {
                         setHeaderHandle(next?.result.header_handle ?? null);
                         setHeaderFileName(next?.fileName ?? null);
+                        setHeaderPreviewUrl(next?.previewUrl ?? null);
                       }}
                     />
                   </div>
-                )}
+                ) : null}
               </>
             ) : null}
           </CardContent>
@@ -467,6 +486,14 @@ export function TemplateForm({
           </CardHeader>
           <CardContent>
             <div className="rounded-lg border bg-emerald-50 p-3 text-sm">
+              {includeHeader && headerFormat === TEMPLATE_HEADER_FORMAT.IMAGE && headerPreviewUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={headerPreviewUrl}
+                  alt={headerFileName ?? 'Header image'}
+                  className="mb-2 max-h-40 w-full rounded border border-emerald-200 object-cover"
+                />
+              ) : null}
               {includeHeader && headerFormat === TEMPLATE_HEADER_FORMAT.DOCUMENT && headerFileName ? (
                 <div className="mb-2 flex items-center gap-2 rounded border border-emerald-200 bg-background px-2 py-1.5 text-xs">
                   <FileText className="h-4 w-4 text-primary" />

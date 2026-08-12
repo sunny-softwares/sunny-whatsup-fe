@@ -11,19 +11,25 @@ import {
   TEMPLATE_STATUS,
   MEDIA_MESSAGES,
   UI_MESSAGES,
+  isUploadableHeaderFormat,
 } from '@/constants';
 import { companyApi } from '@/lib/api/company.api';
 import { templateApi } from '@/lib/api/template.api';
 import { mediaApi } from '@/lib/api/media.api';
 import { pickErrorMessage } from '@/lib/utils';
-import type { MessageDocumentUploadResult, MessageTemplate, WabaAccount } from '@/types';
+import type {
+  MessageHeaderVariable,
+  MessageMediaUploadResult,
+  MessageTemplate,
+  WabaAccount,
+} from '@/types';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TemplatePreview } from '@/components/dashboard/TemplatePreview';
-import { PdfUpload } from '@/components/dashboard/PdfUpload';
+import { MediaUpload } from '@/components/dashboard/MediaUpload';
 
 const padToLength = (arr: string[], n: number) => {
   if (arr.length === n) return arr;
@@ -40,8 +46,8 @@ export default function SendMessagePage() {
   const [headerVars, setHeaderVars] = useState<string[]>([]);
   const [bodyVars, setBodyVars] = useState<string[]>([]);
   const [buttonVars, setButtonVars] = useState<string[]>([]);
-  // PDF attached for a template whose header is a DOCUMENT.
-  const [headerDocument, setHeaderDocument] = useState<MessageDocumentUploadResult | null>(null);
+  // File attached for a template whose header is a DOCUMENT or IMAGE.
+  const [headerMedia, setHeaderMedia] = useState<MessageMediaUploadResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,21 +82,21 @@ export default function SendMessagePage() {
 
   const template = useMemo(() => templates.find((t) => t.id === templateId) || null, [templates, templateId]);
 
-  const isDocumentHeader =
-    template?.variables.header?.format === TEMPLATE_HEADER_FORMAT.DOCUMENT;
-  const isTextHeader =
-    !!template?.variables.header && template.variables.header.format === TEMPLATE_HEADER_FORMAT.TEXT;
+  const headerFormat = template?.variables.header?.format;
+  // DOCUMENT/IMAGE headers are filled by uploading a file rather than typing values.
+  const mediaHeaderFormat = isUploadableHeaderFormat(headerFormat) ? headerFormat : null;
+  const isTextHeader = headerFormat === TEMPLATE_HEADER_FORMAT.TEXT;
 
   // Resize variable arrays whenever the selected template changes.
   useEffect(() => {
-    setHeaderDocument(null);
+    setHeaderMedia(null);
     if (!template) {
       setHeaderVars([]);
       setBodyVars([]);
       setButtonVars([]);
       return;
     }
-    // Document headers carry a media id, not positional text values.
+    // Media headers carry a media id, not positional text values.
     const headerCount = template.variables.header?.format === TEMPLATE_HEADER_FORMAT.TEXT
       ? template.variables.header.count
       : 0;
@@ -99,10 +105,10 @@ export default function SendMessagePage() {
     setButtonVars((prev) => padToLength(prev, template.variables.buttons.length));
   }, [template]);
 
-  // Media uploads are scoped to a phone number, so a previously uploaded document
+  // Media uploads are scoped to a phone number, so a previously uploaded file
   // no longer applies once the sender changes.
   useEffect(() => {
-    setHeaderDocument(null);
+    setHeaderMedia(null);
   }, [phoneNumberId]);
 
   const grouped = useMemo(() => {
@@ -122,16 +128,21 @@ export default function SendMessagePage() {
     setError(null);
     setSuccess(null);
 
-    if (isDocumentHeader && !headerDocument) {
-      setError(MEDIA_MESSAGES.REQUIRED);
+    if (mediaHeaderFormat && !headerMedia) {
+      setError(MEDIA_MESSAGES.REQUIRED[mediaHeaderFormat]);
       return;
     }
 
     setSending(true);
     try {
-      const header = isDocumentHeader
-        ? headerDocument
-          ? [{ id: headerDocument.media_id, filename: headerDocument.file_name }]
+      // `filename` is the recipient-facing document name; images take only the id.
+      const header: MessageHeaderVariable[] = mediaHeaderFormat
+        ? headerMedia
+          ? [
+              mediaHeaderFormat === TEMPLATE_HEADER_FORMAT.DOCUMENT
+                ? { id: headerMedia.media_id, filename: headerMedia.file_name }
+                : { id: headerMedia.media_id },
+            ]
           : []
         : headerVars;
 
@@ -147,7 +158,7 @@ export default function SendMessagePage() {
       });
       setSuccess('Message sent successfully');
       setRecipient('');
-      setHeaderDocument(null);
+      setHeaderMedia(null);
     } catch (err) {
       setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
     } finally {
@@ -155,8 +166,8 @@ export default function SendMessagePage() {
     }
   };
 
-  const uploadDocument = async (file: File) => {
-    const res = await mediaApi.uploadMessageDocument(file, phoneNumberId || undefined);
+  const uploadMedia = async (file: File) => {
+    const res = await mediaApi.uploadMessageMedia(file, phoneNumberId || undefined);
     return res.data;
   };
 
@@ -264,13 +275,18 @@ export default function SendMessagePage() {
               </select>
             </div>
 
-            {template && isDocumentHeader ? (
+            {template && mediaHeaderFormat ? (
               <div className="space-y-2">
-                <Label>Document attachment (PDF)</Label>
-                <PdfUpload<MessageDocumentUploadResult>
-                  fileName={headerDocument?.file_name ?? null}
-                  upload={uploadDocument}
-                  onChange={(next) => setHeaderDocument(next?.result ?? null)}
+                <Label>
+                  {mediaHeaderFormat === TEMPLATE_HEADER_FORMAT.IMAGE
+                    ? 'Image attachment (JPEG/PNG)'
+                    : 'Document attachment (PDF)'}
+                </Label>
+                <MediaUpload<MessageMediaUploadResult>
+                  format={mediaHeaderFormat}
+                  fileName={headerMedia?.file_name ?? null}
+                  upload={uploadMedia}
+                  onChange={(next) => setHeaderMedia(next?.result ?? null)}
                 />
               </div>
             ) : null}

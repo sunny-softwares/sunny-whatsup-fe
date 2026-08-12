@@ -35,8 +35,8 @@ function NewAdminTemplateInner() {
     router.push(backHref);
   };
 
-  const uploadDocument = async (file: File) => {
-    const res = await mediaApi.uploadCompanyTemplateDocument(companyId, file);
+  const uploadMedia = async (file: File) => {
+    const res = await mediaApi.uploadCompanyTemplateMedia(companyId, file);
     return res.data;
   };
 
@@ -67,7 +67,7 @@ function NewAdminTemplateInner() {
       <TemplateForm
         onSubmit={handleSubmit}
         onCancel={() => router.push(backHref)}
-        uploadDocument={uploadDocument}
+        uploadMedia={uploadMedia}
       />
     </>
   );

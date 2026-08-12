@@ -4,6 +4,8 @@ import {
   EXTERNAL_MESSAGES_PATH,
   MEDIA,
   TEMPLATE_HEADER_FORMAT,
+  UI_MESSAGES,
+  isUploadableHeaderFormat,
 } from '@/constants';
 import type { MessageHeaderVariable, MessageTemplate } from '@/types';
 
@@ -19,8 +21,8 @@ interface SendMessageCurlBody {
 
 // Derives the placeholder `variables` payload from a template's variable spec,
 // mirroring the shapes the send-message API expects for each section. The
-// header is skipped for DOCUMENT templates — those use the one-call multipart
-// flow where the attached file becomes the header.
+// header is skipped for DOCUMENT/IMAGE templates — those use the one-call
+// multipart flow where the attached file becomes the header.
 const buildVariablePlaceholders = (template: MessageTemplate) => {
   const spec = template.variables;
   const variables: NonNullable<SendMessageCurlBody['variables']> = {};
@@ -30,8 +32,8 @@ const buildVariablePlaceholders = (template: MessageTemplate) => {
       variables.header = Array.from({ length: spec.header.count }, (_, i) =>
         CURL_PLACEHOLDERS.HEADER_TEXT(i + 1),
       );
-    } else if (spec.header.format !== TEMPLATE_HEADER_FORMAT.DOCUMENT) {
-      // Other media headers (image/video) take a Meta media id.
+    } else if (!isUploadableHeaderFormat(spec.header.format)) {
+      // Media headers we can't attach inline (e.g. video) take a Meta media id.
       variables.header = [{ id: CURL_PLACEHOLDERS.MEDIA_ID }];
     }
   }
@@ -61,9 +63,9 @@ const escapeForCmd = (json: string) => json.replace(/"/g, '\\"');
  * escaped as \"), `^` line continuations, and each quoted argument kept on a
  * single line — CMD cannot span a quoted string across lines.
  *
- * Templates with a document header get the one-call multipart variant: the
- * PDF is attached as `file` and the API uploads + sends in a single request.
- * All other templates get the plain JSON variant.
+ * Templates with a document or image header get the one-call multipart variant:
+ * the file is attached as `file` and the API uploads + sends in a single
+ * request. All other templates get the plain JSON variant.
  */
 export const buildSendMessageCurl = ({
   token,
@@ -74,8 +76,10 @@ export const buildSendMessageCurl = ({
 }): string => {
   const url = `${ENV.API_BASE_URL}${EXTERNAL_MESSAGES_PATH}`;
   const variables = buildVariablePlaceholders(template);
+  const headerFormat = template.variables?.header?.format;
 
-  if (template.variables?.header?.format === TEMPLATE_HEADER_FORMAT.DOCUMENT) {
+  if (isUploadableHeaderFormat(headerFormat)) {
+    const isImage = headerFormat === TEMPLATE_HEADER_FORMAT.IMAGE;
     const lines = [
       `curl -X POST "${url}" ^`,
       `  -H "Authorization: Bearer ${token}" ^`,
@@ -85,10 +89,15 @@ export const buildSendMessageCurl = ({
     if (variables) {
       lines.push(`  -F "variables=${escapeForCmd(JSON.stringify(variables))}" ^`);
     }
-    lines.push(`  -F "filename=${CURL_PLACEHOLDERS.DOCUMENT_FILENAME}" ^`);
+    // `filename` is the recipient-facing document name — documents only.
+    if (!isImage) {
+      lines.push(`  -F "filename=${CURL_PLACEHOLDERS.DOCUMENT_FILENAME}" ^`);
+    }
     // `;type=` is required: curl defaults file parts to application/octet-stream
-    // (it does not sniff .pdf), and the API only accepts application/pdf.
-    lines.push(`  -F "file=@${CURL_PLACEHOLDERS.FILE_PATH};type=${MEDIA.PDF_MIME_TYPE}"`);
+    // (it does not sniff the extension), and the API validates the mime type.
+    const filePath = isImage ? CURL_PLACEHOLDERS.IMAGE_PATH : CURL_PLACEHOLDERS.DOCUMENT_PATH;
+    const mimeType = isImage ? MEDIA.IMAGE_MIME_TYPES[0] : MEDIA.PDF_MIME_TYPE;
+    lines.push(`  -F "file=@${filePath};type=${mimeType}"`);
     return lines.join('\n');
   }
 
@@ -106,9 +115,14 @@ export const buildSendMessageCurl = ({
   ].join('\n');
 };
 
-// Whether the template's header carries a document/media attachment — used to
-// show the extra media-id hint alongside the generated curl.
-export const templateHasMediaHeader = (template: MessageTemplate): boolean => {
+/**
+ * Extra hint shown under the generated curl for templates whose header carries
+ * an attachment, or null when the header is plain text (or absent).
+ */
+export const mediaHeaderCurlHint = (template: MessageTemplate): string | null => {
   const header = template.variables?.header;
-  return !!header && header.count > 0 && header.format !== TEMPLATE_HEADER_FORMAT.TEXT;
+  if (!header || header.count === 0 || header.format === TEMPLATE_HEADER_FORMAT.TEXT) return null;
+  if (header.format === TEMPLATE_HEADER_FORMAT.IMAGE) return UI_MESSAGES.CURL.IMAGE_HINT;
+  if (header.format === TEMPLATE_HEADER_FORMAT.DOCUMENT) return UI_MESSAGES.CURL.DOCUMENT_HINT;
+  return UI_MESSAGES.CURL.MEDIA_ID_HINT;
 };

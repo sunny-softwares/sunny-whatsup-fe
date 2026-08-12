@@ -38,7 +38,7 @@ export type TemplateHeaderFormat = (typeof TEMPLATE_HEADER_FORMAT)[keyof typeof 
 
 export const TEMPLATE_HEADER_FORMAT_LABEL: Record<TemplateHeaderFormat, string> = {
   TEXT: 'Text',
-  IMAGE: 'Image',
+  IMAGE: 'Image (JPEG/PNG)',
   VIDEO: 'Video',
   DOCUMENT: 'Document (PDF)',
   LOCATION: 'Location',
@@ -48,6 +48,7 @@ export const TEMPLATE_HEADER_FORMAT_LABEL: Record<TemplateHeaderFormat, string> 
 export const SUPPORTED_HEADER_FORMATS: TemplateHeaderFormat[] = [
   TEMPLATE_HEADER_FORMAT.TEXT,
   TEMPLATE_HEADER_FORMAT.DOCUMENT,
+  TEMPLATE_HEADER_FORMAT.IMAGE,
 ];
 
 export const TEMPLATE_BUTTON_TYPE = {

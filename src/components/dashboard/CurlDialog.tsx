@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { UI_MESSAGES } from '@/constants';
 import { superAdminApi } from '@/lib/api/superAdmin.api';
-import { buildSendMessageCurl, templateHasMediaHeader } from '@/lib/curl';
+import { buildSendMessageCurl, mediaHeaderCurlHint } from '@/lib/curl';
 import { pickErrorMessage } from '@/lib/utils';
 import type { MessageTemplate } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -116,8 +116,8 @@ export function CurlDialog({ template, companyId, onClose }: CurlDialogProps) {
                 )}
               </Button>
             </div>
-            {template && templateHasMediaHeader(template) ? (
-              <p className="text-xs text-muted-foreground">{UI_MESSAGES.CURL.DOCUMENT_HINT}</p>
+            {template && mediaHeaderCurlHint(template) ? (
+              <p className="text-xs text-muted-foreground">{mediaHeaderCurlHint(template)}</p>
             ) : null}
           </div>
         ) : null}
