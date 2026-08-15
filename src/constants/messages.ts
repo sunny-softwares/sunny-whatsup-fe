@@ -168,6 +168,15 @@ export const UI_MESSAGES = {
     CREATE: 'Create template',
     DELETE_CONFIRM: 'Delete this template on Meta? This cannot be undone.',
   },
+  MESSAGE_ERROR: {
+    VIEW_REASON: 'View failure reason',
+    DIALOG_TITLE: 'Message failure reason',
+    DIALOG_SUBTITLE: 'Error reported for this message.',
+    UNKNOWN_REASON: 'No error details were recorded for this message.',
+    RAW_LABEL: 'Raw error details',
+    DOCS_HINT_PREFIX: 'Some messages failed. To look up what a failure code means, check',
+    DOCS_LINK_LABEL: 'Meta’s WhatsApp error codes reference',
+  },
   TABLE: {
     COL_CREATED: 'Created',
     COL_FROM: 'From',

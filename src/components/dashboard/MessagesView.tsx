@@ -1,13 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { AlertCircle, Info, RefreshCw } from 'lucide-react';
 import {
   MESSAGE_STATUS,
   MESSAGE_SORT_FIELD,
   SORT_ORDER,
   DEFAULT_PAGE_SIZE,
   UI_MESSAGES,
+  EXTERNAL_LINKS,
   type SortOrder,
 } from '@/constants';
 import { cn, formatDateTime, pickErrorMessage } from '@/lib/utils';
@@ -20,6 +21,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Pagination } from '@/components/ui/pagination';
 import { SortableHeader, nextSort } from '@/components/ui/sortable-header';
 import { MessageStatusBadge } from '@/components/dashboard/MessageStatusBadge';
+import { MessageErrorDialog } from '@/components/dashboard/MessageErrorDialog';
 
 interface MessagesResponse {
   data: MessageLog[];
@@ -40,6 +42,8 @@ export function MessagesView({ title, description, showCompany = false, fetchMes
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Failed message whose error details are open in the dialog.
+  const [errorLog, setErrorLog] = useState<MessageLog | null>(null);
 
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('');
@@ -183,6 +187,23 @@ export function MessagesView({ title, description, showCompany = false, fetchMes
             <p className="p-6 text-muted-foreground">{UI_MESSAGES.COMMON.EMPTY}</p>
           ) : (
             <>
+              {items.some((m) => m.status === MESSAGE_STATUS.FAILED) ? (
+                <div className="flex items-start gap-2 border-b bg-muted/50 p-3 text-sm text-muted-foreground">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>
+                    {UI_MESSAGES.MESSAGE_ERROR.DOCS_HINT_PREFIX}{' '}
+                    <a
+                      href={EXTERNAL_LINKS.META_ERROR_CODES_DOCS}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2 hover:text-foreground"
+                    >
+                      {UI_MESSAGES.MESSAGE_ERROR.DOCS_LINK_LABEL}
+                    </a>
+                    .
+                  </p>
+                </div>
+              ) : null}
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -242,7 +263,20 @@ export function MessagesView({ title, description, showCompany = false, fetchMes
                       <TableCell>{m.message_type}</TableCell>
                       <TableCell>{m.template?.name ?? '—'}</TableCell>
                       <TableCell>
-                        <MessageStatusBadge status={m.status} />
+                        <div className="flex items-center gap-1.5">
+                          <MessageStatusBadge status={m.status} />
+                          {m.status === MESSAGE_STATUS.FAILED && m.error_payload ? (
+                            <button
+                              type="button"
+                              onClick={() => setErrorLog(m)}
+                              title={UI_MESSAGES.MESSAGE_ERROR.VIEW_REASON}
+                              className="text-destructive opacity-70 transition-opacity hover:opacity-100"
+                            >
+                              <AlertCircle className="h-4 w-4" />
+                              <span className="sr-only">{UI_MESSAGES.MESSAGE_ERROR.VIEW_REASON}</span>
+                            </button>
+                          ) : null}
+                        </div>
                       </TableCell>
                       <TableCell className="max-w-[220px] truncate text-xs text-muted-foreground">
                         {m.meta_message_id ?? '—'}
@@ -263,6 +297,8 @@ export function MessagesView({ title, description, showCompany = false, fetchMes
           )}
         </CardContent>
       </Card>
+
+      <MessageErrorDialog log={errorLog} onClose={() => setErrorLog(null)} />
     </>
   );
 }

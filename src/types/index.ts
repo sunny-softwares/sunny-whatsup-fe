@@ -78,7 +78,9 @@ export interface MessageLog {
   message_payload?: Record<string, unknown>;
   meta_message_id: string | null;
   status: 'queued' | 'sent' | 'delivered' | 'read' | 'failed';
-  error_payload?: Record<string, unknown> | null;
+  // Object when the send itself failed (Meta error body or { message }); array
+  // of Meta error entries when the failure came via a status webhook.
+  error_payload?: Record<string, unknown> | Array<Record<string, unknown>> | null;
   sent_at: string | null;
   delivered_at: string | null;
   read_at: string | null;
