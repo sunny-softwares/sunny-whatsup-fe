@@ -46,6 +46,8 @@ export const API_ROUTES = {
     APPROVE: (id: string) => `/super-admin/companies/${id}/approve`,
     REJECT: (id: string) => `/super-admin/companies/${id}/reject`,
     SET_ACTIVE: (id: string) => `/super-admin/companies/${id}/active`,
+    COMPANY_MESSAGE_RETENTION: (id: string) =>
+      `/super-admin/companies/${id}/message-retention`,
     MESSAGES: '/super-admin/messages',
     MESSAGE_MEDIA: (id: string) => `/super-admin/messages/${id}/media`,
     MESSAGE_HANDLED: (id: string) => `/super-admin/messages/${id}/handled`,

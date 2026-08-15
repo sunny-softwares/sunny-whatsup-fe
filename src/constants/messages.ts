@@ -168,6 +168,18 @@ export const UI_MESSAGES = {
     CREATE: 'Create template',
     DELETE_CONFIRM: 'Delete this template on Meta? This cannot be undone.',
   },
+  MESSAGE_RETENTION: {
+    NOTICE: (days: number) =>
+      `Message history is shown for the last ${days} days. Older messages aren’t listed here and can’t be filtered for.`,
+    COL_LABEL: 'History',
+    DAYS_SUFFIX: (days: number) => `${days} days`,
+    DIALOG_TITLE: 'Message history window',
+    DIALOG_DESCRIPTION:
+      'How many days of message history this company’s own admins can see on their Messages page. This only limits what they see — no messages are deleted, and your own listings are never restricted.',
+    FIELD_LABEL: 'Days of history',
+    EDIT: 'Change',
+    SAVE_FAILED: 'Could not update the history window. Please try again.',
+  },
   MESSAGE_ACTIONS: {
     OPEN_CHAT: 'Open a WhatsApp chat with this number',
     MARK_HANDLED: 'Mark handled',

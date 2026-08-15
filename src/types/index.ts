@@ -32,6 +32,9 @@ export interface Company {
   website: string | null;
   status: 'pending' | 'approved' | 'rejected' | 'suspended';
   is_active: boolean;
+  // How many days of message history this company's admins may see. A view
+  // limit only — nothing is deleted, and super admins are not restricted.
+  message_retention_days: number;
   approved_at: string | null;
   rejected_at: string | null;
   rejection_reason: string | null;
@@ -145,6 +148,17 @@ export interface Pagination {
   pageSize: number;
   total: number;
   totalPages: number;
+}
+
+/**
+ * The message-history window a listing was limited to. Returned only for
+ * callers that are restricted (company admins); null/absent means the caller
+ * sees everything, as super admins do.
+ */
+export interface MessageRetention {
+  days: number;
+  // Oldest date in the window, as YYYY-MM-DD — usable directly as a date min.
+  from_date: string;
 }
 
 export interface MessageListParams {

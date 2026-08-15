@@ -1,12 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Check, Power, X } from 'lucide-react';
+import { Check, History, Power, X } from 'lucide-react';
 import {
   COMPANY_STATUS,
   COMPANY_SORT_FIELD,
   SORT_ORDER,
   DEFAULT_PAGE_SIZE,
+  MESSAGE_RETENTION,
   UI_MESSAGES,
   type SortOrder,
 } from '@/constants';
@@ -28,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { RetentionDialog } from '@/components/dashboard/RetentionDialog';
 
 const statusBadge = (s: string): 'success' | 'warning' | 'destructive' | 'muted' => {
   if (s === COMPANY_STATUS.APPROVED) return 'success';
@@ -50,6 +52,8 @@ export default function AdminCompaniesPage() {
     order: SORT_ORDER.DESC,
   });
   const [busyId, setBusyId] = useState<string | null>(null);
+  // Company whose message-history window is open for editing.
+  const [retentionFor, setRetentionFor] = useState<Company | null>(null);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -193,6 +197,7 @@ export default function AdminCompaniesPage() {
                       onSort={handleSort}
                     />
                     <TableHead>{UI_MESSAGES.TABLE.COL_ACTIVE}</TableHead>
+                    <TableHead>{UI_MESSAGES.MESSAGE_RETENTION.COL_LABEL}</TableHead>
                     <TableHead className="text-right">{UI_MESSAGES.TABLE.COL_ACTIONS}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -217,6 +222,20 @@ export default function AdminCompaniesPage() {
                         <Badge variant={c.is_active ? 'success' : 'muted'}>
                           {c.is_active ? UI_MESSAGES.ADMIN.ACTIVE : UI_MESSAGES.ADMIN.INACTIVE}
                         </Badge>
+                      </TableCell>
+                      {/* How far back this company's own admins can see their
+                          message history — a view limit, not a deletion. */}
+                      <TableCell className="whitespace-nowrap">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs font-normal"
+                          onClick={() => setRetentionFor(c)}
+                          title={UI_MESSAGES.MESSAGE_RETENTION.DIALOG_TITLE}
+                        >
+                          <History className="mr-1.5 h-3.5 w-3.5" />
+                          {UI_MESSAGES.MESSAGE_RETENTION.DAYS_SUFFIX(c.message_retention_days)}
+                        </Button>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -262,6 +281,14 @@ export default function AdminCompaniesPage() {
           )}
         </CardContent>
       </Card>
+
+      <RetentionDialog
+        company={retentionFor}
+        onClose={() => setRetentionFor(null)}
+        onSaved={(updated) =>
+          setItems((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)))
+        }
+      />
     </>
   );
 }

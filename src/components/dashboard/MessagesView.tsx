@@ -16,7 +16,12 @@ import { buildWhatsappWebResendUrl } from '@/lib/whatsapp';
 import { hasHeaderMedia } from '@/lib/messagePayload';
 import { isMobileDevice } from '@/lib/device';
 import { pickBlobErrorMessage, saveBlob, type DownloadedFile } from '@/lib/download';
-import type { MessageListParams, MessageLog, Pagination as PaginationMeta } from '@/types';
+import type {
+  MessageListParams,
+  MessageLog,
+  MessageRetention,
+  Pagination as PaginationMeta,
+} from '@/types';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +34,9 @@ import { MessageErrorDialog } from '@/components/dashboard/MessageErrorDialog';
 
 interface MessagesResponse {
   data: MessageLog[];
-  meta?: { pagination?: PaginationMeta };
+  // `retention` is present only when the caller is limited to a history
+  // window (company admins); super admins get nothing and see everything.
+  meta?: { pagination?: PaginationMeta; retention?: MessageRetention | null };
 }
 
 interface MessagesViewProps {
@@ -54,6 +61,9 @@ export function MessagesView({
 }: MessagesViewProps) {
   const [items, setItems] = useState<MessageLog[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
+  // The history window the API limited this listing to, or null when the
+  // caller is unrestricted. Drives the notice and the date filter bounds.
+  const [retention, setRetention] = useState<MessageRetention | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +107,7 @@ export function MessagesView({
       });
       setItems(res.data);
       setPagination(res.meta?.pagination ?? null);
+      setRetention(res.meta?.retention ?? null);
     } catch (err) {
       setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
     } finally {
@@ -117,6 +128,14 @@ export function MessagesView({
   const onFilter = (setter: (v: string) => void) => (value: string) => {
     setter(value);
     setPage(1);
+  };
+
+  // A date typed past the start of the history window is pulled back to it —
+  // the inputs' `min` covers the picker, this covers keyboard entry. The API
+  // clamps too, so this only keeps the field honest about what was applied.
+  const onDateFilter = (setter: (v: string) => void) => (value: string) => {
+    const floor = retention?.from_date;
+    onFilter(setter)(floor && value && value < floor ? floor : value);
   };
 
   const handleDownloadMedia = async (message: MessageLog) => {
@@ -173,6 +192,15 @@ export function MessagesView({
         }
       />
 
+      {/* Only shown to callers the API actually limits — super admins see the
+          full history and get no notice. */}
+      {retention ? (
+        <div className="mb-4 flex items-start gap-2 rounded-md border bg-muted/50 p-3 text-sm text-muted-foreground">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>{UI_MESSAGES.MESSAGE_RETENTION.NOTICE(retention.days)}</p>
+        </div>
+      ) : null}
+
       <Card className="mb-4">
         <CardContent className="flex flex-wrap items-end gap-3 p-4">
           {showCompany ? (
@@ -218,13 +246,23 @@ export function MessagesView({
             <label className="mb-1 block text-xs text-muted-foreground">
               {UI_MESSAGES.FILTERS.FROM_DATE_LABEL}
             </label>
-            <Input type="date" value={dateFrom} onChange={(e) => onFilter(setDateFrom)(e.target.value)} />
+            <Input
+              type="date"
+              value={dateFrom}
+              min={retention?.from_date}
+              onChange={(e) => onDateFilter(setDateFrom)(e.target.value)}
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">
               {UI_MESSAGES.FILTERS.TO_DATE_LABEL}
             </label>
-            <Input type="date" value={dateTo} onChange={(e) => onFilter(setDateTo)(e.target.value)} />
+            <Input
+              type="date"
+              value={dateTo}
+              min={retention?.from_date}
+              onChange={(e) => onDateFilter(setDateTo)(e.target.value)}
+            />
           </div>
           <Button variant="ghost" onClick={clearFilters} disabled={busy}>
             {UI_MESSAGES.FILTERS.CLEAR}

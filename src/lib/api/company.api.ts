@@ -8,6 +8,7 @@ import type {
   MessageHeaderVariable,
   MessageListParams,
   MessageLog,
+  MessageRetention,
   Pagination,
   PhoneNumber,
   WabaAccount,
@@ -112,7 +113,10 @@ export const companyApi = {
   },
   async listMessages(params: MessageListParams = {}) {
     const { data } = await apiClient.get<
-      ApiResponseSuccess<MessageLog[]> & { meta?: { pagination: Pagination } }
+      ApiResponseSuccess<MessageLog[]> & {
+        // `retention` reports the history window this listing was limited to.
+        meta?: { pagination: Pagination; retention?: MessageRetention | null };
+      }
     >(API_ROUTES.COMPANY.MESSAGES, { params });
     return data;
   },

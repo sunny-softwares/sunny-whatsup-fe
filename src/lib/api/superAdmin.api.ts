@@ -50,6 +50,14 @@ export const superAdminApi = {
     );
     return data;
   },
+  // How many days of message history this company's own admins may see.
+  async setCompanyMessageRetention(id: string, days: number) {
+    const { data } = await apiClient.patch<ApiResponseSuccess<Company>>(
+      API_ROUTES.SUPER_ADMIN.COMPANY_MESSAGE_RETENTION(id),
+      { message_retention_days: days },
+    );
+    return data;
+  },
   async setCompanyActive(id: string, isActive: boolean) {
     const { data } = await apiClient.patch<ApiResponseSuccess<Company>>(
       API_ROUTES.SUPER_ADMIN.SET_ACTIVE(id),
