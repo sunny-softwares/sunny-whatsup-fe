@@ -199,7 +199,6 @@ export const UI_MESSAGES = {
     COL_TEMPLATE: 'Template',
     COL_STATUS: 'Status',
     COL_HANDLED: 'Handled',
-    COL_META_ID: 'Meta ID',
     COL_COMPANY: 'Company',
     COL_NAME: 'Name',
     COL_CATEGORY: 'Category',

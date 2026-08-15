@@ -316,7 +316,6 @@ export function MessagesView({
                       onSort={handleSort}
                     />
                     <TableHead>{UI_MESSAGES.TABLE.COL_HANDLED}</TableHead>
-                    <TableHead>{UI_MESSAGES.TABLE.COL_META_ID}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -425,9 +424,6 @@ export function MessagesView({
                               : UI_MESSAGES.MESSAGE_ACTIONS.MARK_HANDLED}
                           </Button>
                         )}
-                      </TableCell>
-                      <TableCell className="max-w-[220px] truncate text-xs text-muted-foreground">
-                        {m.meta_message_id ?? '—'}
                       </TableCell>
                     </TableRow>
                   ))}
