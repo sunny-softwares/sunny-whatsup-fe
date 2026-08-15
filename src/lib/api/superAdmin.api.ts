@@ -68,6 +68,14 @@ export const superAdminApi = {
   downloadMessageMedia(messageId: string) {
     return downloadFile(API_ROUTES.SUPER_ADMIN.MESSAGE_MEDIA(messageId));
   },
+  // Records (or clears) that a failed message was resent by hand.
+  async setMessageHandled(messageId: string, handled: boolean) {
+    const { data } = await apiClient.patch<ApiResponseSuccess<MessageLog>>(
+      API_ROUTES.SUPER_ADMIN.MESSAGE_HANDLED(messageId),
+      { handled },
+    );
+    return data;
+  },
   async listCompanyMessages(companyId: string, params: MessageListParams = {}) {
     const { data } = await apiClient.get<
       ApiResponseSuccess<MessageLog[]> & { meta?: { pagination: Pagination } }

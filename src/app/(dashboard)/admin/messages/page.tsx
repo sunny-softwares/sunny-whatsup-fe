@@ -12,6 +12,7 @@ export default function AdminMessagesPage() {
       showCompany
       fetchMessages={superAdminApi.listMessages}
       downloadMessageMedia={superAdminApi.downloadMessageMedia}
+      setMessageHandled={superAdminApi.setMessageHandled}
     />
   );
 }

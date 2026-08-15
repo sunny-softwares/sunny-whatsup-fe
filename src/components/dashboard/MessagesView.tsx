@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { AlertCircle, ArrowUpRight, Download, Info, Loader2, RefreshCw } from 'lucide-react';
+import { AlertCircle, ArrowUpRight, Check, Download, Info, Loader2, RefreshCw } from 'lucide-react';
 import {
   MESSAGE_STATUS,
   MESSAGE_SORT_FIELD,
@@ -40,6 +40,8 @@ interface MessagesViewProps {
   fetchMessages: (params: MessageListParams) => Promise<MessagesResponse>;
   // Fetches a message's header attachment back from Meta for manual resending.
   downloadMessageMedia: (messageId: string) => Promise<DownloadedFile>;
+  // Records (or clears) that a failed message was resent by hand.
+  setMessageHandled: (messageId: string, handled: boolean) => Promise<{ data: MessageLog }>;
 }
 
 export function MessagesView({
@@ -48,6 +50,7 @@ export function MessagesView({
   showCompany = false,
   fetchMessages,
   downloadMessageMedia,
+  setMessageHandled,
 }: MessagesViewProps) {
   const [items, setItems] = useState<MessageLog[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
@@ -56,10 +59,12 @@ export function MessagesView({
   const [error, setError] = useState<string | null>(null);
   // Failed message whose error details are open in the dialog.
   const [errorLog, setErrorLog] = useState<MessageLog | null>(null);
-  // Attachment download in flight, and the reason the last one failed (most
-  // often Meta having dropped the media after its retention window).
+  // Per-row actions in flight, and the reason the last one failed — for a
+  // download, most often Meta having dropped the media after its retention
+  // window.
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [handlingId, setHandlingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   // Decides whether a recipient link hands off to the WhatsApp app or the web
   // client. Resolved after mount, since the server cannot know the device.
   const [onMobile, setOnMobile] = useState(false);
@@ -116,13 +121,28 @@ export function MessagesView({
 
   const handleDownloadMedia = async (message: MessageLog) => {
     setDownloadingId(message.id);
-    setDownloadError(null);
+    setActionError(null);
     try {
       saveBlob(await downloadMessageMedia(message.id));
     } catch (err) {
-      setDownloadError(await pickBlobErrorMessage(err, UI_MESSAGES.MESSAGE_ERROR.DOWNLOAD_FAILED));
+      setActionError(await pickBlobErrorMessage(err, UI_MESSAGES.MESSAGE_ERROR.DOWNLOAD_FAILED));
     } finally {
       setDownloadingId(null);
+    }
+  };
+
+  // Flips the manual-handling mark, then swaps the updated row into place so
+  // the change shows without refetching the page.
+  const handleToggleHandled = async (message: MessageLog) => {
+    setHandlingId(message.id);
+    setActionError(null);
+    try {
+      const res = await setMessageHandled(message.id, !message.manually_handled_at);
+      setItems((prev) => prev.map((m) => (m.id === res.data.id ? res.data : m)));
+    } catch (err) {
+      setActionError(pickErrorMessage(err, UI_MESSAGES.MESSAGE_ACTIONS.HANDLED_FAILED));
+    } finally {
+      setHandlingId(null);
     }
   };
 
@@ -222,13 +242,13 @@ export function MessagesView({
             <p className="p-6 text-muted-foreground">{UI_MESSAGES.COMMON.EMPTY}</p>
           ) : (
             <>
-              {downloadError ? (
+              {actionError ? (
                 <div className="flex items-start gap-2 border-b bg-destructive/10 p-3 text-sm text-destructive">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <p className="flex-1">{downloadError}</p>
+                  <p className="flex-1">{actionError}</p>
                   <button
                     type="button"
-                    onClick={() => setDownloadError(null)}
+                    onClick={() => setActionError(null)}
                     className="shrink-0 underline underline-offset-2"
                   >
                     {UI_MESSAGES.COMMON.DISMISS}
@@ -295,6 +315,7 @@ export function MessagesView({
                       sort={sort}
                       onSort={handleSort}
                     />
+                    <TableHead>{UI_MESSAGES.TABLE.COL_HANDLED}</TableHead>
                     <TableHead>{UI_MESSAGES.TABLE.COL_META_ID}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -373,6 +394,37 @@ export function MessagesView({
                             </button>
                           ) : null}
                         </div>
+                      </TableCell>
+                      {/* Only a failure is something an admin has to chase up
+                          outside the platform, so only failures are markable. */}
+                      <TableCell className="whitespace-nowrap">
+                        {m.status !== MESSAGE_STATUS.FAILED ? (
+                          <span className="text-muted-foreground">—</span>
+                        ) : (
+                          <Button
+                            variant={m.manually_handled_at ? 'ghost' : 'outline'}
+                            size="sm"
+                            disabled={handlingId === m.id}
+                            onClick={() => handleToggleHandled(m)}
+                            title={
+                              m.manually_handled_at
+                                ? UI_MESSAGES.MESSAGE_ACTIONS.UNMARK_HANDLED_HINT(
+                                    formatDateTime(m.manually_handled_at),
+                                  )
+                                : UI_MESSAGES.MESSAGE_ACTIONS.MARK_HANDLED_HINT
+                            }
+                            className="h-7 px-2 text-xs font-normal"
+                          >
+                            {handlingId === m.id ? (
+                              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                            ) : m.manually_handled_at ? (
+                              <Check className="mr-1.5 h-3.5 w-3.5 text-green-600" />
+                            ) : null}
+                            {m.manually_handled_at
+                              ? formatDateTime(m.manually_handled_at)
+                              : UI_MESSAGES.MESSAGE_ACTIONS.MARK_HANDLED}
+                          </Button>
+                        )}
                       </TableCell>
                       <TableCell className="max-w-[220px] truncate text-xs text-muted-foreground">
                         {m.meta_message_id ?? '—'}

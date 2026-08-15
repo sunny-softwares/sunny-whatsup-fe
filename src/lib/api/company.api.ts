@@ -121,6 +121,14 @@ export const companyApi = {
   downloadMessageMedia(messageId: string) {
     return downloadFile(API_ROUTES.COMPANY.MESSAGE_MEDIA(messageId));
   },
+  // Records (or clears) that a failed message was resent by hand.
+  async setMessageHandled(messageId: string, handled: boolean) {
+    const { data } = await apiClient.patch<ApiResponseSuccess<MessageLog>>(
+      API_ROUTES.COMPANY.MESSAGE_HANDLED(messageId),
+      { handled },
+    );
+    return data;
+  },
   async deleteAccount() {
     const { data } = await apiClient.delete<
       ApiResponseSuccess<{

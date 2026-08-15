@@ -170,6 +170,11 @@ export const UI_MESSAGES = {
   },
   MESSAGE_ACTIONS: {
     OPEN_CHAT: 'Open a WhatsApp chat with this number',
+    MARK_HANDLED: 'Mark handled',
+    MARK_HANDLED_HINT: 'Record that you resent this message yourself',
+    HANDLED: 'Handled',
+    UNMARK_HANDLED_HINT: (when: string) => `Marked handled on ${when} — click to undo`,
+    HANDLED_FAILED: 'Could not update the message. Please try again.',
   },
   MESSAGE_ERROR: {
     VIEW_REASON: 'View failure reason',
@@ -193,6 +198,7 @@ export const UI_MESSAGES = {
     COL_TYPE: 'Type',
     COL_TEMPLATE: 'Template',
     COL_STATUS: 'Status',
+    COL_HANDLED: 'Handled',
     COL_META_ID: 'Meta ID',
     COL_COMPANY: 'Company',
     COL_NAME: 'Name',

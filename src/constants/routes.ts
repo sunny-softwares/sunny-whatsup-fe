@@ -48,6 +48,7 @@ export const API_ROUTES = {
     SET_ACTIVE: (id: string) => `/super-admin/companies/${id}/active`,
     MESSAGES: '/super-admin/messages',
     MESSAGE_MEDIA: (id: string) => `/super-admin/messages/${id}/media`,
+    MESSAGE_HANDLED: (id: string) => `/super-admin/messages/${id}/handled`,
     COMPANY_WABA: (companyId: string) => `/super-admin/companies/${companyId}/waba`,
     COMPANY_WABA_CONNECT: (companyId: string) =>
       `/super-admin/companies/${companyId}/waba/connect`,
@@ -88,6 +89,7 @@ export const API_ROUTES = {
     WABA_PHONE_REGISTER: (id: string) => `/company/waba/phone-numbers/${id}/register`,
     MESSAGES: '/company/messages',
     MESSAGE_MEDIA: (id: string) => `/company/messages/${id}/media`,
+    MESSAGE_HANDLED: (id: string) => `/company/messages/${id}/handled`,
     TEMPLATES: '/company/templates',
     TEMPLATE: (id: string) => `/company/templates/${id}`,
     TEMPLATES_SYNC: '/company/templates/sync',

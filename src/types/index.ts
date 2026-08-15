@@ -88,6 +88,9 @@ export interface MessageLog {
   delivered_at: string | null;
   read_at: string | null;
   failed_at: string | null;
+  // When an admin marked this failed message as dealt with by hand (e.g.
+  // resent via WhatsApp Web). Null means still outstanding.
+  manually_handled_at: string | null;
   created_at: string;
   phoneNumber?: { id: string; display_phone_number: string; phone_number_id: string } | null;
 }
