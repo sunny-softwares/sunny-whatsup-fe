@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, downloadFile } from './client';
 import { API_ROUTES } from '@/constants';
 import type {
   ApiResponseSuccess,
@@ -62,6 +62,11 @@ export const superAdminApi = {
       ApiResponseSuccess<MessageLog[]> & { meta?: { pagination: Pagination } }
     >(API_ROUTES.SUPER_ADMIN.MESSAGES, { params });
     return data;
+  },
+  // Fetches back the image/document attached to a sent message's header, so it
+  // can be re-attached by hand (e.g. when resending on WhatsApp Web).
+  downloadMessageMedia(messageId: string) {
+    return downloadFile(API_ROUTES.SUPER_ADMIN.MESSAGE_MEDIA(messageId));
   },
   async listCompanyMessages(companyId: string, params: MessageListParams = {}) {
     const { data } = await apiClient.get<

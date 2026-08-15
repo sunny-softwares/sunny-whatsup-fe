@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
-import { ENV, ROUTES } from '@/constants';
+import { ENV, MEDIA, ROUTES } from '@/constants';
 import { tokenStore } from '@/lib/auth/token';
+import { filenameFromDisposition, type DownloadedFile } from '@/lib/download';
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: ENV.API_BASE_URL,
@@ -32,3 +33,18 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+/**
+ * GETs an endpoint that streams a file. Errors also arrive as blobs here — use
+ * pickBlobErrorMessage to read the API's message back out of them.
+ */
+export const downloadFile = async (url: string): Promise<DownloadedFile> => {
+  const res = await apiClient.get<Blob>(url, { responseType: 'blob' });
+  return {
+    blob: res.data,
+    filename: filenameFromDisposition(
+      res.headers['content-disposition'],
+      MEDIA.DEFAULT_DOWNLOAD_FILENAME,
+    ),
+  };
+};

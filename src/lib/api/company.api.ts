@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, downloadFile } from './client';
 import { API_ROUTES } from '@/constants';
 import type {
   ApiResponseSuccess,
@@ -115,6 +115,11 @@ export const companyApi = {
       ApiResponseSuccess<MessageLog[]> & { meta?: { pagination: Pagination } }
     >(API_ROUTES.COMPANY.MESSAGES, { params });
     return data;
+  },
+  // Fetches back the image/document attached to a sent message's header, so it
+  // can be re-attached by hand (e.g. when resending on WhatsApp Web).
+  downloadMessageMedia(messageId: string) {
+    return downloadFile(API_ROUTES.COMPANY.MESSAGE_MEDIA(messageId));
   },
   async deleteAccount() {
     const { data } = await apiClient.delete<

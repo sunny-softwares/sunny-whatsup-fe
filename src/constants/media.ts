@@ -16,6 +16,11 @@ export const MEDIA = {
   MAX_IMAGE_SIZE_LABEL: '1 MB',
   // Multipart field name expected by the upload endpoints.
   UPLOAD_FIELD_NAME: 'file',
+  // Parameter types a sent message's header component may carry when the
+  // template has a media header (mirrors Meta's parameter object keys).
+  MEDIA_HEADER_PARAM_TYPES: ['image', 'document', 'video'] as string[],
+  // Fallback name for a downloaded attachment whose name we don't know.
+  DEFAULT_DOWNLOAD_FILENAME: 'attachment',
 } as const;
 
 // Template header formats a company can fill by uploading a file.

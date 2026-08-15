@@ -168,6 +168,9 @@ export const UI_MESSAGES = {
     CREATE: 'Create template',
     DELETE_CONFIRM: 'Delete this template on Meta? This cannot be undone.',
   },
+  MESSAGE_ACTIONS: {
+    OPEN_CHAT: 'Open a WhatsApp chat with this number',
+  },
   MESSAGE_ERROR: {
     VIEW_REASON: 'View failure reason',
     DIALOG_TITLE: 'Message failure reason',
@@ -176,6 +179,12 @@ export const UI_MESSAGES = {
     RAW_LABEL: 'Raw error details',
     DOCS_HINT_PREFIX: 'Some messages failed. To look up what a failure code means, check',
     DOCS_LINK_LABEL: 'Meta’s WhatsApp error codes reference',
+    SEND_WHATSAPP_WEB: 'Send it on WhatsApp Web',
+    // WhatsApp's click-to-chat link can only prefill text, so an attachment has
+    // to be downloaded and re-attached by hand in the WhatsApp Web composer.
+    DOWNLOAD_MEDIA: 'Download the attachment to re-attach on WhatsApp Web',
+    DOWNLOADING_MEDIA: 'Downloading the attachment…',
+    DOWNLOAD_FAILED: 'Could not download the attachment. Please try again.',
   },
   TABLE: {
     COL_CREATED: 'Created',
@@ -257,5 +266,6 @@ export const UI_MESSAGES = {
     SUCCESS: 'Success',
     ERROR: 'Error',
     EMPTY: 'No data available',
+    DISMISS: 'Dismiss',
   },
 } as const;

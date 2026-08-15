@@ -1,4 +1,5 @@
 import type { Role } from '@/constants';
+import type { TemplateComponent } from './template';
 
 export * from './template';
 
@@ -74,7 +75,9 @@ export interface MessageLog {
   recipient_phone: string;
   message_type: string;
   template_id: string | null;
-  template: { id: string | null; name: string } | null;
+  // `components` carries the template's Meta component definitions so the UI
+  // can reconstruct the message text (e.g. for the WhatsApp Web resend link).
+  template: { id: string | null; name: string; components?: TemplateComponent[] | null } | null;
   message_payload?: Record<string, unknown>;
   meta_message_id: string | null;
   status: 'queued' | 'sent' | 'delivered' | 'read' | 'failed';

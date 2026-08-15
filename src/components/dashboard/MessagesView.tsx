@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { AlertCircle, Info, RefreshCw } from 'lucide-react';
+import { AlertCircle, ArrowUpRight, Download, Info, Loader2, RefreshCw } from 'lucide-react';
 import {
   MESSAGE_STATUS,
   MESSAGE_SORT_FIELD,
@@ -12,6 +12,10 @@ import {
   type SortOrder,
 } from '@/constants';
 import { cn, formatDateTime, pickErrorMessage } from '@/lib/utils';
+import { buildWhatsappWebResendUrl } from '@/lib/whatsapp';
+import { hasHeaderMedia } from '@/lib/messagePayload';
+import { isMobileDevice } from '@/lib/device';
+import { pickBlobErrorMessage, saveBlob, type DownloadedFile } from '@/lib/download';
 import type { MessageListParams, MessageLog, Pagination as PaginationMeta } from '@/types';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -34,9 +38,17 @@ interface MessagesViewProps {
   // When true, shows a Company column + company-name filter (super admin view).
   showCompany?: boolean;
   fetchMessages: (params: MessageListParams) => Promise<MessagesResponse>;
+  // Fetches a message's header attachment back from Meta for manual resending.
+  downloadMessageMedia: (messageId: string) => Promise<DownloadedFile>;
 }
 
-export function MessagesView({ title, description, showCompany = false, fetchMessages }: MessagesViewProps) {
+export function MessagesView({
+  title,
+  description,
+  showCompany = false,
+  fetchMessages,
+  downloadMessageMedia,
+}: MessagesViewProps) {
   const [items, setItems] = useState<MessageLog[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +56,13 @@ export function MessagesView({ title, description, showCompany = false, fetchMes
   const [error, setError] = useState<string | null>(null);
   // Failed message whose error details are open in the dialog.
   const [errorLog, setErrorLog] = useState<MessageLog | null>(null);
+  // Attachment download in flight, and the reason the last one failed (most
+  // often Meta having dropped the media after its retention window).
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  // Decides whether a recipient link hands off to the WhatsApp app or the web
+  // client. Resolved after mount, since the server cannot know the device.
+  const [onMobile, setOnMobile] = useState(false);
 
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('');
@@ -85,10 +104,26 @@ export function MessagesView({ title, description, showCompany = false, fetchMes
     load();
   }, [load]);
 
+  useEffect(() => {
+    setOnMobile(isMobileDevice());
+  }, []);
+
   // Any filter change returns to the first page so results stay consistent.
   const onFilter = (setter: (v: string) => void) => (value: string) => {
     setter(value);
     setPage(1);
+  };
+
+  const handleDownloadMedia = async (message: MessageLog) => {
+    setDownloadingId(message.id);
+    setDownloadError(null);
+    try {
+      saveBlob(await downloadMessageMedia(message.id));
+    } catch (err) {
+      setDownloadError(await pickBlobErrorMessage(err, UI_MESSAGES.MESSAGE_ERROR.DOWNLOAD_FAILED));
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const handleSort = (field: string) => {
@@ -187,6 +222,19 @@ export function MessagesView({ title, description, showCompany = false, fetchMes
             <p className="p-6 text-muted-foreground">{UI_MESSAGES.COMMON.EMPTY}</p>
           ) : (
             <>
+              {downloadError ? (
+                <div className="flex items-start gap-2 border-b bg-destructive/10 p-3 text-sm text-destructive">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p className="flex-1">{downloadError}</p>
+                  <button
+                    type="button"
+                    onClick={() => setDownloadError(null)}
+                    className="shrink-0 underline underline-offset-2"
+                  >
+                    {UI_MESSAGES.COMMON.DISMISS}
+                  </button>
+                </div>
+              ) : null}
               {items.some((m) => m.status === MESSAGE_STATUS.FAILED) ? (
                 <div className="flex items-start gap-2 border-b bg-muted/50 p-3 text-sm text-muted-foreground">
                   <Info className="mt-0.5 h-4 w-4 shrink-0" />
@@ -259,7 +307,21 @@ export function MessagesView({ title, description, showCompany = false, fetchMes
                       ) : (
                         <TableCell>{m.phoneNumber?.display_phone_number ?? '—'}</TableCell>
                       )}
-                      <TableCell className="font-medium">{m.recipient_phone}</TableCell>
+                      <TableCell className="font-medium">
+                        {EXTERNAL_LINKS.isDialable(m.recipient_phone) ? (
+                          <a
+                            href={EXTERNAL_LINKS.whatsappChat(m.recipient_phone, onMobile)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={UI_MESSAGES.MESSAGE_ACTIONS.OPEN_CHAT}
+                            className="underline-offset-2 hover:underline"
+                          >
+                            {m.recipient_phone}
+                          </a>
+                        ) : (
+                          m.recipient_phone
+                        )}
+                      </TableCell>
                       <TableCell>{m.message_type}</TableCell>
                       <TableCell>{m.template?.name ?? '—'}</TableCell>
                       <TableCell>
@@ -274,6 +336,40 @@ export function MessagesView({ title, description, showCompany = false, fetchMes
                             >
                               <AlertCircle className="h-4 w-4" />
                               <span className="sr-only">{UI_MESSAGES.MESSAGE_ERROR.VIEW_REASON}</span>
+                            </button>
+                          ) : null}
+                          {m.status === MESSAGE_STATUS.FAILED ? (
+                            <a
+                              href={buildWhatsappWebResendUrl(m)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={UI_MESSAGES.MESSAGE_ERROR.SEND_WHATSAPP_WEB}
+                              className="text-muted-foreground opacity-70 transition-opacity hover:opacity-100"
+                            >
+                              <ArrowUpRight className="h-4 w-4" />
+                              <span className="sr-only">{UI_MESSAGES.MESSAGE_ERROR.SEND_WHATSAPP_WEB}</span>
+                            </a>
+                          ) : null}
+                          {/* Only messages that actually carried an attachment
+                              have something to download. */}
+                          {m.status === MESSAGE_STATUS.FAILED && hasHeaderMedia(m) ? (
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadMedia(m)}
+                              disabled={downloadingId === m.id}
+                              title={
+                                downloadingId === m.id
+                                  ? UI_MESSAGES.MESSAGE_ERROR.DOWNLOADING_MEDIA
+                                  : UI_MESSAGES.MESSAGE_ERROR.DOWNLOAD_MEDIA
+                              }
+                              className="text-muted-foreground opacity-70 transition-opacity hover:opacity-100 disabled:opacity-40"
+                            >
+                              {downloadingId === m.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Download className="h-4 w-4" />
+                              )}
+                              <span className="sr-only">{UI_MESSAGES.MESSAGE_ERROR.DOWNLOAD_MEDIA}</span>
                             </button>
                           ) : null}
                         </div>

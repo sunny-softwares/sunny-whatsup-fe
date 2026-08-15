@@ -9,6 +9,7 @@ export default function CompanyMessagesPage() {
     <MessagesView
       title={UI_MESSAGES.COMPANY.MESSAGES_TITLE}
       fetchMessages={companyApi.listMessages}
+      downloadMessageMedia={companyApi.downloadMessageMedia}
     />
   );
 }

@@ -11,6 +11,7 @@ export default function AdminMessagesPage() {
       description="Delivery activity across all tenants"
       showCompany
       fetchMessages={superAdminApi.listMessages}
+      downloadMessageMedia={superAdminApi.downloadMessageMedia}
     />
   );
 }
