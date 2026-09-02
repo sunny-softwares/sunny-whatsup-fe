@@ -5,6 +5,7 @@
 import * as Sentry from '@sentry/nextjs';
 import { ENV } from '@/constants/env';
 import {
+  SENTRY_CONSOLE_LEVELS,
   SENTRY_DATA_COLLECTION,
   SENTRY_DENY_URLS,
   SENTRY_IGNORE_ERRORS,
@@ -23,14 +24,17 @@ Sentry.init({
       maskAllInputs: true,
       blockAllMedia: true,
     }),
+    Sentry.consoleLoggingIntegration({ levels: SENTRY_CONSOLE_LEVELS }),
   ],
 
   tracesSampleRate: ENV.SENTRY.TRACES_SAMPLE_RATE,
 
-  // Only keep replays for sessions that actually errored — replays are the
-  // expensive part of the quota.
-  replaysSessionSampleRate: 0,
-  replaysOnErrorSampleRate: 1.0,
+  replaysSessionSampleRate: ENV.SENTRY.REPLAYS_SESSION_SAMPLE_RATE,
+  replaysOnErrorSampleRate: ENV.SENTRY.REPLAYS_ON_ERROR_SAMPLE_RATE,
+
+  // Feeds the Logs view - both explicit Sentry.logger calls and the console
+  // levels captured above.
+  enableLogs: true,
 
   ignoreErrors: SENTRY_IGNORE_ERRORS,
   denyUrls: SENTRY_DENY_URLS,

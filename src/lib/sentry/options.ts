@@ -37,3 +37,11 @@ export const SENTRY_DATA_COLLECTION = {
     response: { deny: ['set-cookie'] },
   },
 };
+
+/**
+ * Console levels forwarded into Sentry's Logs view. Deliberately excludes
+ * `log`/`debug`/`info`: console capture bypasses the scrubbing below (it just
+ * ships whatever string was logged), and this app logs around message bodies
+ * and phone numbers. Widen only if you're sure the call sites are clean.
+ */
+export const SENTRY_CONSOLE_LEVELS: ('error' | 'warn')[] = ['error', 'warn'];

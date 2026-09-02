@@ -23,6 +23,16 @@ export const ENV = {
       process.env.NEXT_PUBLIC_VERCEL_ENV ??
       process.env.NODE_ENV ??
       'development',
-    TRACES_SAMPLE_RATE: sampleRate(process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE, 0.1),
+    // Capture everything by default. Replays in particular are the expensive
+    // part of the quota — turn these down via the env vars if volume grows.
+    TRACES_SAMPLE_RATE: sampleRate(process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE, 1.0),
+    REPLAYS_SESSION_SAMPLE_RATE: sampleRate(
+      process.env.NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE,
+      1.0,
+    ),
+    REPLAYS_ON_ERROR_SAMPLE_RATE: sampleRate(
+      process.env.NEXT_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE,
+      1.0,
+    ),
   },
 } as const;
