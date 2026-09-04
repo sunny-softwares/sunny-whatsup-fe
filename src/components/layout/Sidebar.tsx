@@ -58,10 +58,16 @@ const COMPANY_NAV: NavItem[] = [
   { label: 'Send Message', href: ROUTES.COMPANY.SEND_MESSAGE, icon: Send, feature: COMPANY_FEATURE.SEND_MESSAGE },
   { label: 'Messages', href: ROUTES.COMPANY.MESSAGES, icon: History, feature: COMPANY_FEATURE.MESSAGES },
   { label: UI_MESSAGES.BILLING.NAV_LABEL, href: ROUTES.COMPANY.BILLING, icon: CreditCard, feature: COMPANY_FEATURE.BILLING },
-  // No `feature` key on purpose: the subscription page must stay reachable
-  // whatever the feature map says, especially when the company is locked out for
-  // non-payment and this is the only page that can fix it.
-  { label: UI_MESSAGES.SUBSCRIPTION.NAV_LABEL, href: ROUTES.COMPANY.SUBSCRIPTION, icon: Receipt },
+  // Gated like everything else, so the super admin's toggle actually works.
+  // Being locked out for non-payment does NOT hide this — the backend keeps
+  // `subscription` enabled while locked so the company can still reach the page
+  // it pays from — but an explicit "off" from the admin does.
+  {
+    label: UI_MESSAGES.SUBSCRIPTION.NAV_LABEL,
+    href: ROUTES.COMPANY.SUBSCRIPTION,
+    icon: Receipt,
+    feature: COMPANY_FEATURE.SUBSCRIPTION,
+  },
 ];
 
 const ADMIN_NAV: NavItem[] = [

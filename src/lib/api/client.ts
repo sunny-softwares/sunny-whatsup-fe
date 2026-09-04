@@ -2,7 +2,10 @@ import axios, { AxiosError, AxiosInstance } from 'axios';
 import { ENV, HTTP_STATUS, MEDIA, ROUTES } from '@/constants';
 import { tokenStore } from '@/lib/auth/token';
 import { filenameFromDisposition, type DownloadedFile } from '@/lib/download';
-import { captureSubscriptionNotice } from '@/lib/subscriptionNotice';
+import {
+  captureSubscriptionNotice,
+  isSubscriptionPageReachable,
+} from '@/lib/subscriptionNotice';
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: ENV.API_BASE_URL,
@@ -55,7 +58,9 @@ apiClient.interceptors.response.use(
     // except when they are already there, or the request WAS a payment call.
     if (typeof window !== 'undefined' && error.response?.status === HTTP_STATUS.PAYMENT_REQUIRED) {
       const path = window.location.pathname;
-      if (!path.startsWith(ROUTES.COMPANY.SUBSCRIPTION)) {
+      // Skip the redirect when the super admin has switched the subscription
+      // page off — sending someone to a page they cannot open is a dead end.
+      if (!path.startsWith(ROUTES.COMPANY.SUBSCRIPTION) && isSubscriptionPageReachable()) {
         window.location.href = ROUTES.COMPANY.SUBSCRIPTION;
       }
     }

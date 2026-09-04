@@ -82,10 +82,10 @@ export const COMPANY_FEATURE_META: Record<
 // Route prefix → feature, used by the client-side guard for company admins.
 // A path matches when it equals the prefix or sits underneath it.
 //
-// NOTE: /company/subscription is deliberately absent. It must stay reachable
-// whatever the feature map says — a company locked out for non-payment has to be
-// able to reach the page it pays from. The backend allow-lists it for the same
-// reason.
+// /company/subscription IS mapped, so the super admin's toggle genuinely hides
+// it. Being locked out for non-payment does not: the backend keeps the
+// `subscription` feature enabled while locked, precisely so a company can still
+// reach the page it pays from.
 export const COMPANY_FEATURE_ROUTES: Record<string, CompanyFeatureKey> = {
   [ROUTES.COMPANY.DASHBOARD]: COMPANY_FEATURE.DASHBOARD,
   [ROUTES.COMPANY.WABA]: COMPANY_FEATURE.WABA,
@@ -93,6 +93,7 @@ export const COMPANY_FEATURE_ROUTES: Record<string, CompanyFeatureKey> = {
   [ROUTES.COMPANY.SEND_MESSAGE]: COMPANY_FEATURE.SEND_MESSAGE,
   [ROUTES.COMPANY.MESSAGES]: COMPANY_FEATURE.MESSAGES,
   [ROUTES.COMPANY.BILLING]: COMPANY_FEATURE.BILLING,
+  [ROUTES.COMPANY.SUBSCRIPTION]: COMPANY_FEATURE.SUBSCRIPTION,
   [ROUTES.SETTINGS.ROOT]: COMPANY_FEATURE.SETTINGS,
 };
 
