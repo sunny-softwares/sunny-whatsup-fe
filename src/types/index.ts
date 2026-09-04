@@ -1,7 +1,11 @@
 import type { Role } from '@/constants';
 import type { TemplateComponent } from './template';
+// Type-only, so the index ↔ subscription cycle is erased at compile time.
+import type { SubscriptionNotice } from './subscription';
 
 export * from './template';
+export * from './subscription';
+export * from './paymentLink';
 
 export interface AuthUser {
   id: string;
@@ -197,12 +201,15 @@ export interface ApiResponseSuccess<T> {
   success: true;
   message?: string;
   data: T;
-  meta?: { pagination?: Pagination };
+  // `subscription` is attached to EVERY company and External API response
+  // (success and error alike) — purely additive, no existing key changes.
+  meta?: { pagination?: Pagination; subscription?: SubscriptionNotice };
 }
 
 export interface ApiResponseError {
   success: false;
   error: { code: string; message: string; details?: unknown };
+  meta?: { subscription?: SubscriptionNotice };
 }
 
 export type ApiResponse<T> = ApiResponseSuccess<T> | ApiResponseError;

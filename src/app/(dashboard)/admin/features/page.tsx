@@ -10,10 +10,12 @@ import {
   type CompanyFeatureKey,
 } from '@/constants';
 import { superAdminApi } from '@/lib/api/superAdmin.api';
+import { adminSubscriptionApi } from '@/lib/api/adminSubscription.api';
 import { pickErrorMessage } from '@/lib/utils';
-import type { Company, CompanyFeatures } from '@/types';
+import type { Company, CompanyFeatureDetail, CompanyFeatures } from '@/types';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { SearchableSelect } from '@/components/ui/searchable-select';
@@ -27,6 +29,10 @@ function AdminFeaturesInner() {
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [features, setFeatures] = useState<CompanyFeatures | null>(null);
+  // Per-key breakdown of WHY each feature is on: a manual override, the
+  // company's plan, or neither. Without it a deliberate toggle is
+  // indistinguishable from an inherited plan grant.
+  const [detail, setDetail] = useState<CompanyFeatureDetail[]>([]);
   const [loading, setLoading] = useState(false);
   // Feature key currently being toggled (disables just that row).
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -48,15 +54,18 @@ function AdminFeaturesInner() {
   const loadFeatures = useCallback(async () => {
     if (!companyId) {
       setFeatures(null);
+      setDetail([]);
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const res = await superAdminApi.getCompanyFeatures(companyId);
+      const res = await adminSubscriptionApi.getCompanyFeatures(companyId);
       setFeatures(res.data);
+      setDetail(res.meta?.features ?? []);
     } catch (err) {
       setFeatures(null);
+      setDetail([]);
       setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
     } finally {
       setLoading(false);
@@ -78,8 +87,27 @@ function AdminFeaturesInner() {
     setBusyKey(featureKey);
     setError(null);
     try {
-      const res = await superAdminApi.setCompanyFeature(companyId, featureKey, isEnabled);
-      setFeatures(res.data);
+      await superAdminApi.setCompanyFeature(companyId, featureKey, isEnabled);
+      // Reload rather than trusting the toggle response: the source breakdown
+      // changes too (this key is now an override), and only the GET returns it.
+      await loadFeatures();
+    } catch (err) {
+      setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  /**
+   * Drops the manual override so the feature falls back to the company's plan
+   * grant — the way to undo a toggle without pinning the opposite value forever.
+   */
+  const handleClearOverride = async (featureKey: CompanyFeatureKey) => {
+    setBusyKey(featureKey);
+    setError(null);
+    try {
+      await adminSubscriptionApi.clearFeatureOverride(companyId, featureKey);
+      await loadFeatures();
     } catch (err) {
       setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
     } finally {
@@ -125,8 +153,10 @@ function AdminFeaturesInner() {
               {COMPANY_FEATURE_VALUES.map((key) => {
                 const meta = COMPANY_FEATURE_META[key];
                 const enabled = !!features[key];
+                const info = detail.find((d) => d.feature_key === key);
+
                 return (
-                  <li key={key} className="flex items-center gap-4 p-4">
+                  <li key={key} className="flex flex-wrap items-center gap-4 p-4">
                     <Checkbox
                       id={`feature-${key}`}
                       checked={enabled}
@@ -139,6 +169,26 @@ function AdminFeaturesInner() {
                         {meta.description}
                       </span>
                     </label>
+
+                    {/* Where this value came from. A manual override beats the
+                        plan; the plan beats default-deny. */}
+                    {info?.is_override ? (
+                      <Badge variant="outline">{UI_MESSAGES.FEATURES.SOURCE_OVERRIDE}</Badge>
+                    ) : info?.plan_grants ? (
+                      <Badge variant="muted">{UI_MESSAGES.FEATURES.SOURCE_PLAN}</Badge>
+                    ) : null}
+
+                    {info?.is_override ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={busyKey === key}
+                        onClick={() => handleClearOverride(key)}
+                      >
+                        {UI_MESSAGES.FEATURES.RESET_TO_PLAN}
+                      </Button>
+                    ) : null}
+
                     <Badge variant={enabled ? 'success' : 'secondary'}>
                       {enabled ? UI_MESSAGES.FEATURES.ENABLED : UI_MESSAGES.FEATURES.DISABLED}
                     </Badge>
