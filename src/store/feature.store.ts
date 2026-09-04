@@ -2,6 +2,8 @@
 
 import { create } from 'zustand';
 import { companyApi } from '@/lib/api/company.api';
+import { registerSubscriptionPageReachability } from '@/lib/subscriptionNotice';
+import { COMPANY_FEATURE } from '@/constants/features';
 import type { CompanyFeatures } from '@/types';
 
 interface FeatureState {
@@ -31,3 +33,14 @@ export const useFeatureStore = create<FeatureState>((set, get) => ({
   },
   clear: () => set({ features: null, loading: false }),
 }));
+
+// The axios interceptor cannot import this store (client → store → api → client
+// would be a cycle), so it reads reachability through this bridge instead. Used
+// before redirecting a 402 to the subscription page: if the super admin has
+// switched that page off, the redirect would be a dead end.
+registerSubscriptionPageReachability(() => {
+  const features = useFeatureStore.getState().features;
+  // Unknown yet → allow the redirect; the route guards correct it if wrong.
+  if (features === null) return true;
+  return features[COMPANY_FEATURE.SUBSCRIPTION] === true;
+});

@@ -31,3 +31,28 @@ export const captureSubscriptionNotice = (body: unknown): void => {
   if (!sink || !hasNotice(body)) return;
   sink(body.meta.subscription);
 };
+
+/**
+ * Whether the company can actually open the subscription page.
+ *
+ * Same bridge problem as above: the interceptor cannot import the feature store,
+ * so the store registers a reader here. Used before redirecting a 402 there —
+ * if the super admin has switched the page off, sending someone to it is a dead
+ * end, and the error is better left to surface where it happened.
+ *
+ * Defaults to true so a redirect still happens before the feature map has
+ * loaded; the guards correct it a moment later if that turns out to be wrong.
+ */
+let canReachSubscriptionPage: () => boolean = () => true;
+
+export const registerSubscriptionPageReachability = (reader: () => boolean) => {
+  canReachSubscriptionPage = reader;
+};
+
+export const isSubscriptionPageReachable = () => {
+  try {
+    return canReachSubscriptionPage();
+  } catch {
+    return true;
+  }
+};
