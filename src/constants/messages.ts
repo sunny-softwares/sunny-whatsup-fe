@@ -70,11 +70,14 @@ export const UI_MESSAGES = {
   FEATURES: {
     TITLE: 'Company Features',
     SUBTITLE:
-      'Control which product features each company can use. Disabled features disappear from the company’s sidebar and their APIs are blocked.',
+      'Control which product features each company can use. Disabled features disappear from the company’s sidebar and their APIs are blocked. A toggle set here always beats what the company’s plan grants.',
     NAV_LABEL: 'Features',
     NO_COMPANY_SELECTED: 'Select a company above to manage its features.',
     ENABLED: 'Enabled',
     DISABLED: 'Disabled',
+    SOURCE_OVERRIDE: 'Set manually',
+    SOURCE_PLAN: 'From plan',
+    RESET_TO_PLAN: 'Reset to plan',
     NOT_ENABLED_PAGE:
       'This feature is not enabled for your company. Please contact the administrator.',
     NONE_ENABLED:
@@ -251,6 +254,207 @@ export const UI_MESSAGES = {
     NO_WABA:
       'No WhatsApp Business Account is connected yet, so we can’t link to a specific account — the Billing Hub will open on your default business portfolio.',
   },
+  // Static UI chrome only. Everything describing the STATE of a subscription —
+  // titles, warnings, day counts, CTA labels — arrives from the API as
+  // `meta.subscription`, driven by the editable `subscription_notices` table.
+  // Never hardcode that copy here.
+  SUBSCRIPTION: {
+    TITLE: 'Subscription',
+    NAV_LABEL: 'Subscription',
+    SUBTITLE: 'Manage your plan, billing cycle and payments.',
+    ADMIN_TITLE: 'Subscriptions',
+    ADMIN_SUBTITLE: 'Every company’s plan, billing cycle and payment status.',
+    PLANS_TITLE: 'Plans',
+    PLANS_SUBTITLE: 'Pricing, trial and grace periods, and what each plan unlocks.',
+
+    CURRENT_PLAN: 'Current plan',
+    PAID_THROUGH: (date: string) => `Paid through ${date}`,
+    PAID_THROUGH_HINT:
+      'You renewed early, so the cycle below runs to its own end date and the time you bought is queued after it.',
+    CHOOSE_PLAN: 'Choose a plan',
+    CURRENT_BADGE: 'Current plan',
+    COMING_SOON_BADGE: 'Coming soon',
+    NOTIFY_ME: 'Notify me',
+    NOTIFY_ME_DONE: 'We’ll let you know',
+    PAY_NOW: 'Pay now',
+    RENEW_NOW: 'Renew now',
+    UPGRADE: 'Switch to this plan',
+    SAVE_PERCENT: (percent: number) => `Save ${percent}%`,
+    BILLED_MONTHLY: 'Billed monthly',
+    BILLED_YEARLY: 'Billed yearly',
+
+    PAYMENT_UNAVAILABLE:
+      'Online payment is not available right now. Please contact the administrator to arrange payment.',
+    PRICE_UNAVAILABLE: 'No price is configured for this billing cycle yet.',
+    TEST_MODE_BANNER:
+      'Razorpay is in test mode — no real payment will be taken. Use a Razorpay test card.',
+    CHECKOUT_CANCELLED: 'Payment cancelled. You have not been charged.',
+    CHECKOUT_FAILED: 'The payment could not be completed. Please try again.',
+    CHECKOUT_SCRIPT_FAILED:
+      'Could not load the payment gateway. Check your connection and try again.',
+    PAYMENT_SUCCESS: 'Payment successful — your subscription is active.',
+
+    CANCEL_TITLE: 'Cancel subscription',
+    CANCEL_BUTTON: 'Cancel subscription',
+    CANCEL_CONFIRM:
+      'Your plan will stay active until the end of the cycle you have already paid for, and will not renew after that. You can resume any time before then.',
+    RESUME_BUTTON: 'Resume subscription',
+
+    PAYMENT_HISTORY_TITLE: 'Payment history',
+    PAYMENT_HISTORY_EMPTY: 'No payments yet.',
+    CYCLES_TITLE: 'Billing cycles',
+    CYCLE_CURRENT: 'Current',
+    CYCLE_QUEUED: 'Queued',
+    CYCLE_PAST: 'Past',
+    HISTORY_TITLE: 'Billing history',
+    BANKED_COVERAGE_HINT: (date: string) =>
+      `This company has renewed early and is paid through ${date}. The queued cycles below start when the current one ends.`,
+    NO_SUBSCRIPTION: 'No subscription is set up for this company yet.',
+
+    // Super admin
+    EDIT_SUBSCRIPTION: 'Edit subscription',
+    EDIT_PERIOD: 'Edit billing cycle',
+    NEW_PERIOD: 'New billing cycle',
+    NEW_CYCLE_BUTTON: 'New cycle',
+    CREATE_CYCLE: 'Create cycle',
+    PLACEMENT_QUEUED: (date: string) =>
+      `This cycle will be QUEUED — it starts on ${date}, when the company's current coverage ends.`,
+    PLACEMENT_CURRENT:
+      'Nothing is currently running, so this cycle starts immediately and becomes the active one.',
+    MAKE_ACTIVE: 'Make this the active cycle now',
+    MAKE_ACTIVE_HINT:
+      'Supersedes every cycle still running or queued and starts this one immediately. Superseded cycles stay in the billing history but stop granting access.',
+    PLACEMENT_REPLACE: (count: number) =>
+      count > 0
+        ? `This cycle starts NOW and becomes the only active one. ${count} existing ${
+            count === 1 ? 'cycle' : 'cycles'
+          } will be superseded and stop granting access.`
+        : 'This cycle starts NOW and becomes the active one. Nothing else is currently in play.',
+    CYCLE_SUPERSEDED: 'Superseded',
+    SUPERSEDED_HINT: 'Voided by an admin — no longer grants access.',
+    CUSTOM_DATES: 'Set custom dates',
+    CUSTOM_AMOUNT: 'Set a custom amount',
+    DEFAULT_DATES_HINT: (start: string, cycle: string) =>
+      `Starts ${start} and runs for one ${cycle} cycle.`,
+    ENDS_AT_HINT: 'Leave blank to run for one full billing cycle from the start date.',
+    DEFAULT_AMOUNT_HINT: (amount: string) => `Uses the plan's current price of ₹${amount}.`,
+    NO_PLAN_PRICE_HINT:
+      'This plan has no active price for the selected billing cycle, so the amount will be ₹0.',
+    GRACE_INHERIT: 'Inherit from plan',
+    MARK_AS_TRIAL: 'Mark this cycle as a trial',
+    NOTES_PLACEHOLDER: 'Why this cycle was created (visible to admins only)',
+    EXTEND: 'Extend',
+    EXTEND_DAYS_LABEL: 'Extend by (days)',
+    MARK_PAID: 'Mark paid',
+    SUSPEND: 'Suspend',
+    RESUME: 'Resume',
+    VIEW_PAYMENTS: 'Payments',
+    VIEW_HISTORY: 'History',
+    PLAN_LABEL: 'Plan',
+    CYCLE_LABEL: 'Billing cycle',
+    STATE_LABEL: 'State',
+    PAYMENT_STATUS_LABEL: 'Payment',
+    STARTS_AT_LABEL: 'Starts',
+    ENDS_AT_LABEL: 'Ends',
+    GRACE_DAYS_LABEL: 'Grace days',
+    AMOUNT_LABEL: 'Amount',
+    NOTES_LABEL: 'Notes',
+    DAYS_REMAINING: (days: number) => `${days} day${days === 1 ? '' : 's'} left`,
+    NO_COMPANY_SELECTED: 'Select a company to view its subscription.',
+    ENFORCEMENT_OFF:
+      'Subscription enforcement is OFF. States below are accurate, but no company is being blocked. Turn on SUBSCRIPTION_ENFORCEMENT_ENABLED once these look right.',
+
+    MONTHLY_PRICE_LABEL: 'Monthly price (₹)',
+    YEARLY_PRICE_LABEL: 'Yearly price (₹)',
+    TRIAL_DAYS_LABEL: 'Trial days',
+    PURCHASABLE_LABEL: 'Purchasable',
+    COMING_SOON_LABEL: 'Show as coming soon',
+    SAVE_PRICES: 'Save pricing',
+    SAVE_PLAN: 'Save plan',
+  },
+  // Razorpay Payment Links — a standalone super-admin collection tool.
+  // Unrelated to subscriptions.
+  PAYMENT_LINK: {
+    TITLE: 'Payment Links',
+    NAV_LABEL: 'Payment Links',
+    SUBTITLE: 'Create and track one-off payment requests collected through Razorpay.',
+
+    NEW: 'New payment link',
+    CREATE: 'Create link',
+
+    // Fallbacks — the API returns its own message for each of these, so these
+    // only show if a response arrives without one.
+    CREATED: 'Payment link created',
+    CANCELLED: 'Payment link cancelled',
+    NOTIFIED: 'Payment link sent',
+    EMPTY: 'No payment links yet. Create one to collect a payment.',
+    NO_MATCHES: 'No payment links match these filters.',
+
+    GATEWAY_DISABLED:
+      'Razorpay is not configured, so new links cannot be created. Existing links are still shown.',
+    TEST_MODE: 'Razorpay is in test mode — these links do not collect real money.',
+
+    // Stat cards
+    STAT_TOTAL: 'Total links',
+    STAT_AWAITING: 'Awaiting payment',
+    STAT_COLLECTED: 'Collected',
+    STAT_OUTSTANDING: 'Outstanding',
+    STAT_OUTSTANDING_HINT: 'Unpaid amount on links that can still be paid',
+
+    // Table
+    COL_CUSTOMER: 'Customer',
+    COL_AMOUNT: 'Amount',
+    COL_STATUS: 'Status',
+    COL_CREATED: 'Created',
+    COL_EXPIRES: 'Expires',
+    COL_LINK: 'Link',
+    NO_CUSTOMER: 'No customer details',
+    NO_EXPIRY: 'No expiry',
+    PAID_OF: (paid: string, total: string) => `${paid} of ${total}`,
+
+    // Actions
+    COPY: 'Copy',
+    COPIED: 'Link copied',
+    OPEN: 'Open',
+    RESEND: 'Resend',
+    RESEND_SMS: 'Resend by SMS',
+    RESEND_EMAIL: 'Resend by email',
+    CANCEL_LINK: 'Cancel',
+    CANCEL_TITLE: 'Cancel this payment link?',
+    CANCEL_CONFIRM:
+      'The link stops working immediately and can no longer be paid. This cannot be undone.',
+    SYNC: 'Refresh',
+    SYNC_HINT: 'Fetch the latest status from Razorpay',
+    VIEW: 'Details',
+
+    // Create form
+    AMOUNT_LABEL: 'Amount (₹)',
+    DESCRIPTION_LABEL: 'What is this for?',
+    DESCRIPTION_PLACEHOLDER: 'Shown to the customer on the payment page',
+    CUSTOMER_SECTION: 'Customer',
+    CUSTOMER_NAME_LABEL: 'Name',
+    CUSTOMER_EMAIL_LABEL: 'Email',
+    CUSTOMER_CONTACT_LABEL: 'Phone',
+    CUSTOMER_HINT: 'Razorpay can only send the link to a channel it has an address for.',
+    NOTIFY_SMS: 'Send by SMS',
+    NOTIFY_EMAIL: 'Send by email',
+    NOTIFY_SMS_REQUIRES: 'Add a phone number to send by SMS',
+    NOTIFY_EMAIL_REQUIRES: 'Add an email address to send by email',
+    REMINDERS: 'Let Razorpay send payment reminders',
+    OPTIONS_SECTION: 'Options',
+    ACCEPT_PARTIAL: 'Allow partial payments',
+    FIRST_MIN_LABEL: 'Minimum first instalment (₹)',
+    EXPIRE_BY_LABEL: 'Expires on',
+    EXPIRE_BY_HINT: 'Leave blank for no expiry.',
+    REFERENCE_LABEL: 'Your reference',
+    REFERENCE_PLACEHOLDER: 'e.g. an invoice number (must be unique)',
+
+    // Details
+    DETAILS_TITLE: 'Payment link',
+    RAZORPAY_ID: 'Razorpay ID',
+    CREATED_BY: 'Created by',
+    NOTES: 'Notes',
+  },
   SETTINGS: {
     TITLE: 'Settings',
     SECURITY_LABEL: 'Security',
@@ -276,6 +480,7 @@ export const UI_MESSAGES = {
     NO_MATCHES: 'No matches found',
     CLEAR_SELECTION: 'Clear selection',
     SAVE: 'Save',
+    EDIT: 'Edit',
     CANCEL: 'Cancel',
     SUBMIT: 'Submit',
     SEARCH: 'Search',

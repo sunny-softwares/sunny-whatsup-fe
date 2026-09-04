@@ -12,6 +12,9 @@ import {
   FileText,
   KeyRound,
   CreditCard,
+  Receipt,
+  Package,
+  Link2,
   LogOut,
   SlidersHorizontal,
   Settings,
@@ -29,6 +32,7 @@ import {
 } from '@/constants';
 import { useAuthStore } from '@/store/auth.store';
 import { useFeatureStore } from '@/store/feature.store';
+import { useSubscriptionStore } from '@/store/subscription.store';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -54,6 +58,10 @@ const COMPANY_NAV: NavItem[] = [
   { label: 'Send Message', href: ROUTES.COMPANY.SEND_MESSAGE, icon: Send, feature: COMPANY_FEATURE.SEND_MESSAGE },
   { label: 'Messages', href: ROUTES.COMPANY.MESSAGES, icon: History, feature: COMPANY_FEATURE.MESSAGES },
   { label: UI_MESSAGES.BILLING.NAV_LABEL, href: ROUTES.COMPANY.BILLING, icon: CreditCard, feature: COMPANY_FEATURE.BILLING },
+  // No `feature` key on purpose: the subscription page must stay reachable
+  // whatever the feature map says, especially when the company is locked out for
+  // non-payment and this is the only page that can fix it.
+  { label: UI_MESSAGES.SUBSCRIPTION.NAV_LABEL, href: ROUTES.COMPANY.SUBSCRIPTION, icon: Receipt },
 ];
 
 const ADMIN_NAV: NavItem[] = [
@@ -65,6 +73,10 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'All Messages', href: ROUTES.ADMIN.MESSAGES, icon: MessageSquare },
   { label: UI_MESSAGES.API_TOKEN.NAV_LABEL, href: ROUTES.ADMIN.API_TOKENS, icon: KeyRound },
   { label: UI_MESSAGES.BILLING.NAV_LABEL, href: ROUTES.ADMIN.BILLING, icon: CreditCard },
+  { label: UI_MESSAGES.SUBSCRIPTION.ADMIN_TITLE, href: ROUTES.ADMIN.SUBSCRIPTIONS, icon: Receipt },
+  { label: UI_MESSAGES.SUBSCRIPTION.PLANS_TITLE, href: ROUTES.ADMIN.PLANS, icon: Package },
+  // Standalone collection tool — unrelated to subscriptions.
+  { label: UI_MESSAGES.PAYMENT_LINK.NAV_LABEL, href: ROUTES.ADMIN.PAYMENT_LINKS, icon: Link2 },
 ];
 
 const SETTINGS_GROUP: NavGroup = {
@@ -86,6 +98,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const logout = useAuthStore((s) => s.logout);
   const features = useFeatureStore((s) => s.features);
   const clearFeatures = useFeatureStore((s) => s.clear);
+  const clearSubscription = useSubscriptionStore((s) => s.clear);
 
   const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
   // Company items appear only once the feature map is loaded AND the feature
@@ -104,6 +117,9 @@ export function Sidebar({ onNavigate }: SidebarProps) {
 
   const handleLogout = () => {
     clearFeatures();
+    // Otherwise the next user to sign in on this device briefly sees the previous
+    // company's subscription banner.
+    clearSubscription();
     logout();
     router.replace(ROUTES.LOGIN);
   };

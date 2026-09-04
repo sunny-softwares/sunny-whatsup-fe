@@ -12,7 +12,9 @@ export const ROUTES = {
     TEMPLATES_NEW: '/company/templates/new',
     SEND_MESSAGE: '/company/send-message',
     MESSAGES: '/company/messages',
+    // Meta's Billing Hub link-out — not our subscription page.
     BILLING: '/company/billing',
+    SUBSCRIPTION: '/company/subscription',
   },
   ADMIN: {
     ROOT: '/admin',
@@ -25,6 +27,9 @@ export const ROUTES = {
     API_TOKENS: '/admin/api-tokens',
     FEATURES: '/admin/features',
     BILLING: '/admin/billing',
+    SUBSCRIPTIONS: '/admin/subscriptions',
+    PLANS: '/admin/plans',
+    PAYMENT_LINKS: '/admin/payment-links',
   },
   SETTINGS: {
     ROOT: '/settings',
@@ -76,6 +81,39 @@ export const API_ROUTES = {
       `/super-admin/companies/${companyId}/templates/sync`,
     COMPANY_MEDIA_TEMPLATE_DOCUMENT: (companyId: string) =>
       `/super-admin/companies/${companyId}/media/template-document`,
+    // Subscriptions & billing
+    SUBSCRIPTIONS: '/super-admin/subscriptions',
+    SUBSCRIPTION_STATS: '/super-admin/subscriptions/stats',
+    COMPANY_SUBSCRIPTION: (companyId: string) =>
+      `/super-admin/companies/${companyId}/subscription`,
+    COMPANY_SUBSCRIPTION_PERIODS: (companyId: string) =>
+      `/super-admin/companies/${companyId}/subscription/periods`,
+    COMPANY_SUBSCRIPTION_PERIOD: (companyId: string, periodId: string) =>
+      `/super-admin/companies/${companyId}/subscription/periods/${periodId}`,
+    COMPANY_SUBSCRIPTION_EXTEND: (companyId: string) =>
+      `/super-admin/companies/${companyId}/subscription/extend`,
+    COMPANY_SUBSCRIPTION_MARK_PAID: (companyId: string) =>
+      `/super-admin/companies/${companyId}/subscription/mark-paid`,
+    COMPANY_SUBSCRIPTION_SUSPEND: (companyId: string) =>
+      `/super-admin/companies/${companyId}/subscription/suspend`,
+    COMPANY_SUBSCRIPTION_RESUME: (companyId: string) =>
+      `/super-admin/companies/${companyId}/subscription/resume`,
+    COMPANY_PAYMENTS: (companyId: string) => `/super-admin/companies/${companyId}/payments`,
+    // Plan & notice catalogues
+    PLANS: '/super-admin/plans',
+    PLAN: (id: string) => `/super-admin/plans/${id}`,
+    PLAN_PRICES: (id: string) => `/super-admin/plans/${id}/prices`,
+    PLAN_FEATURES: (id: string) => `/super-admin/plans/${id}/features`,
+    PLAN_INTERESTS: '/super-admin/plan-interests',
+    SUBSCRIPTION_NOTICES: '/super-admin/subscription-notices',
+    SUBSCRIPTION_NOTICE: (id: string) => `/super-admin/subscription-notices/${id}`,
+    // Payment Links — standalone, unrelated to subscriptions.
+    PAYMENT_LINKS: '/super-admin/payment-links',
+    PAYMENT_LINK_STATS: '/super-admin/payment-links/stats',
+    PAYMENT_LINK: (id: string) => `/super-admin/payment-links/${id}`,
+    PAYMENT_LINK_CANCEL: (id: string) => `/super-admin/payment-links/${id}/cancel`,
+    PAYMENT_LINK_NOTIFY: (id: string) => `/super-admin/payment-links/${id}/notify`,
+    PAYMENT_LINK_SYNC: (id: string) => `/super-admin/payment-links/${id}/sync`,
   },
   COMPANY: {
     ME: '/company/me',
@@ -97,5 +135,15 @@ export const API_ROUTES = {
     TEMPLATES_SYNC: '/company/templates/sync',
     MEDIA_TEMPLATE_DOCUMENT: '/company/media/template-document',
     MEDIA_MESSAGE_DOCUMENT: '/company/media/message-document',
+    // Subscription. Every one of these stays reachable while the subscription is
+    // blocking, so a locked-out company can still pay.
+    SUBSCRIPTION: '/company/subscription',
+    SUBSCRIPTION_PLANS: '/company/subscription/plans',
+    SUBSCRIPTION_PAYMENTS: '/company/subscription/payments',
+    SUBSCRIPTION_ORDERS: '/company/subscription/orders',
+    SUBSCRIPTION_VERIFY: '/company/subscription/payments/verify',
+    SUBSCRIPTION_CANCEL: '/company/subscription/cancel',
+    SUBSCRIPTION_RESUME: '/company/subscription/resume',
+    SUBSCRIPTION_INTEREST: '/company/subscription/interest',
   },
 } as const;

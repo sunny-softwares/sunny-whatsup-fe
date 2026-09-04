@@ -1,7 +1,8 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
-import { ENV, MEDIA, ROUTES } from '@/constants';
+import { ENV, HTTP_STATUS, MEDIA, ROUTES } from '@/constants';
 import { tokenStore } from '@/lib/auth/token';
 import { filenameFromDisposition, type DownloadedFile } from '@/lib/download';
+import { captureSubscriptionNotice } from '@/lib/subscriptionNotice';
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: ENV.API_BASE_URL,
@@ -13,16 +14,34 @@ export const apiClient: AxiosInstance = axios.create({
 
 apiClient.interceptors.request.use((config) => {
   const token = tokenStore.get();
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (config.headers) {
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+
+    // Lets the server render dates it bakes into text (subscription notices) in
+    // the same zone the browser renders everything else, so one screen never
+    // shows two different days for the same instant.
+    try {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (timezone) config.headers['X-Timezone'] = timezone;
+    } catch {
+      // Ancient browser without a resolvable zone: the server falls back.
+    }
   }
   return config;
 });
 
 apiClient.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    // Every company response carries meta.subscription. Harvesting it here keeps
+    // the banner current off traffic the app is making anyway — no polling, and
+    // no page needing to know the notice exists.
+    captureSubscriptionNotice(res.data);
+    return res;
+  },
   (error: AxiosError) => {
-    if (typeof window !== 'undefined' && error.response?.status === 401) {
+    captureSubscriptionNotice(error.response?.data);
+
+    if (typeof window !== 'undefined' && error.response?.status === HTTP_STATUS.UNAUTHORIZED) {
       tokenStore.clear();
       // Avoid loops on the auth pages.
       const path = window.location.pathname;
@@ -30,6 +49,17 @@ apiClient.interceptors.response.use(
         window.location.href = ROUTES.LOGIN;
       }
     }
+
+    // 402 is a billing problem, not a permission problem: the subscription is
+    // blocking. Send the user to the page they can actually fix it from —
+    // except when they are already there, or the request WAS a payment call.
+    if (typeof window !== 'undefined' && error.response?.status === HTTP_STATUS.PAYMENT_REQUIRED) {
+      const path = window.location.pathname;
+      if (!path.startsWith(ROUTES.COMPANY.SUBSCRIPTION)) {
+        window.location.href = ROUTES.COMPANY.SUBSCRIPTION;
+      }
+    }
+
     return Promise.reject(error);
   },
 );
