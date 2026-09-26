@@ -1,7 +1,11 @@
 import { apiClient, downloadFile } from './client';
 import { API_ROUTES } from '@/constants';
 import type {
+  AddPhoneEmbeddedResult,
   ApiResponseSuccess,
+  DisconnectWabaResult,
+  SyncAllWabasResult,
+  WabaAccountSummary,
   Company,
   CompanyFeatures,
   CompanyStats,
@@ -26,6 +30,8 @@ export interface AddPhoneNumberPayload {
   cc: string;
   phone_number: string;
   verified_name: string;
+  // Which of the company's WABAs gets the number; the active one if omitted.
+  waba_account_id?: string;
 }
 
 // Adding numbers via Embedded Signup (e.g. a WhatsApp Business app number
@@ -77,24 +83,41 @@ export const companyApi = {
     );
     return data;
   },
+  // Disconnects the active WABA.
   async disconnectWaba() {
-    const { data } = await apiClient.post<
-      ApiResponseSuccess<{
-        archived: boolean;
-        meta_waba_id: string;
-        purged: {
-          phone_numbers_count: number;
-          templates_count: number;
-          messages_count: number;
-          messages_sampled: number;
-        };
-      }>
-    >(API_ROUTES.COMPANY.WABA_DISCONNECT);
+    const { data } = await apiClient.post<ApiResponseSuccess<DisconnectWabaResult>>(
+      API_ROUTES.COMPANY.WABA_DISCONNECT,
+    );
     return data;
   },
+  // Refreshes every WABA of the company from Meta.
   async syncWaba() {
-    const { data } = await apiClient.post<ApiResponseSuccess<WabaAccount>>(
+    const { data } = await apiClient.post<ApiResponseSuccess<SyncAllWabasResult>>(
       API_ROUTES.COMPANY.WABA_SYNC,
+    );
+    return data;
+  },
+  async listWabas() {
+    const { data } = await apiClient.get<ApiResponseSuccess<WabaAccountSummary[]>>(
+      API_ROUTES.COMPANY.WABA_ACCOUNTS,
+    );
+    return data;
+  },
+  async activateWaba(wabaAccountId: string) {
+    const { data } = await apiClient.post<ApiResponseSuccess<WabaAccountSummary[]>>(
+      API_ROUTES.COMPANY.WABA_ACCOUNT_ACTIVATE(wabaAccountId),
+    );
+    return data;
+  },
+  async syncWabaAccount(wabaAccountId: string) {
+    const { data } = await apiClient.post<ApiResponseSuccess<WabaAccountSummary[]>>(
+      API_ROUTES.COMPANY.WABA_ACCOUNT_SYNC(wabaAccountId),
+    );
+    return data;
+  },
+  async disconnectWabaAccount(wabaAccountId: string) {
+    const { data } = await apiClient.post<ApiResponseSuccess<DisconnectWabaResult>>(
+      API_ROUTES.COMPANY.WABA_ACCOUNT_DISCONNECT(wabaAccountId),
     );
     return data;
   },
@@ -106,7 +129,7 @@ export const companyApi = {
     return data;
   },
   async addPhoneEmbedded(payload: AddPhoneEmbeddedPayload) {
-    const { data } = await apiClient.post<ApiResponseSuccess<WabaAccount>>(
+    const { data } = await apiClient.post<ApiResponseSuccess<AddPhoneEmbeddedResult>>(
       API_ROUTES.COMPANY.WABA_PHONES_EMBEDDED,
       payload,
     );

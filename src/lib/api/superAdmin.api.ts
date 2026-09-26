@@ -1,7 +1,11 @@
 import { apiClient, downloadFile } from './client';
 import { API_ROUTES } from '@/constants';
 import type {
+  AddPhoneEmbeddedResult,
   ApiResponseSuccess,
+  DisconnectWabaResult,
+  SyncAllWabasResult,
+  WabaAccountSummary,
   ApiTokenCompanyRow,
   ApiTokenListParams,
   ApiTokenRevealResult,
@@ -110,24 +114,41 @@ export const superAdminApi = {
     );
     return data;
   },
+  // Disconnects the company's active WABA.
   async disconnectCompanyWaba(companyId: string) {
-    const { data } = await apiClient.post<
-      ApiResponseSuccess<{
-        archived: boolean;
-        meta_waba_id: string;
-        purged: {
-          phone_numbers_count: number;
-          templates_count: number;
-          messages_count: number;
-          messages_sampled: number;
-        };
-      }>
-    >(API_ROUTES.SUPER_ADMIN.COMPANY_WABA_DISCONNECT(companyId));
+    const { data } = await apiClient.post<ApiResponseSuccess<DisconnectWabaResult>>(
+      API_ROUTES.SUPER_ADMIN.COMPANY_WABA_DISCONNECT(companyId),
+    );
     return data;
   },
+  // Refreshes every WABA of the company from Meta.
   async syncCompanyWaba(companyId: string) {
-    const { data } = await apiClient.post<ApiResponseSuccess<WabaAccount>>(
+    const { data } = await apiClient.post<ApiResponseSuccess<SyncAllWabasResult>>(
       API_ROUTES.SUPER_ADMIN.COMPANY_WABA_SYNC(companyId),
+    );
+    return data;
+  },
+  async listCompanyWabas(companyId: string) {
+    const { data } = await apiClient.get<ApiResponseSuccess<WabaAccountSummary[]>>(
+      API_ROUTES.SUPER_ADMIN.COMPANY_WABA_ACCOUNTS(companyId),
+    );
+    return data;
+  },
+  async activateCompanyWaba(companyId: string, wabaAccountId: string) {
+    const { data } = await apiClient.post<ApiResponseSuccess<WabaAccountSummary[]>>(
+      API_ROUTES.SUPER_ADMIN.COMPANY_WABA_ACCOUNT_ACTIVATE(companyId, wabaAccountId),
+    );
+    return data;
+  },
+  async syncCompanyWabaAccount(companyId: string, wabaAccountId: string) {
+    const { data } = await apiClient.post<ApiResponseSuccess<WabaAccountSummary[]>>(
+      API_ROUTES.SUPER_ADMIN.COMPANY_WABA_ACCOUNT_SYNC(companyId, wabaAccountId),
+    );
+    return data;
+  },
+  async disconnectCompanyWabaAccount(companyId: string, wabaAccountId: string) {
+    const { data } = await apiClient.post<ApiResponseSuccess<DisconnectWabaResult>>(
+      API_ROUTES.SUPER_ADMIN.COMPANY_WABA_ACCOUNT_DISCONNECT(companyId, wabaAccountId),
     );
     return data;
   },
@@ -139,7 +160,7 @@ export const superAdminApi = {
     return data;
   },
   async addCompanyPhoneEmbedded(companyId: string, payload: AddPhoneEmbeddedPayload) {
-    const { data } = await apiClient.post<ApiResponseSuccess<WabaAccount>>(
+    const { data } = await apiClient.post<ApiResponseSuccess<AddPhoneEmbeddedResult>>(
       API_ROUTES.SUPER_ADMIN.COMPANY_WABA_PHONES_EMBEDDED(companyId),
       payload,
     );

@@ -72,7 +72,47 @@ export interface WabaAccount {
   connection_flow: 'embedded_new' | 'embedded_existing' | 'manual_token' | null;
   connected_at: string;
   disconnected_at: string | null;
+  // The company's active WABA — the one sending, templates and media use.
+  // Exactly one per company.
+  is_active: boolean;
   phoneNumbers?: PhoneNumber[];
+}
+
+// A WABA in the company's full list, with what a disconnect would purge.
+export interface WabaAccountSummary extends WabaAccount {
+  templates_count: number;
+  messages_count: number;
+}
+
+export interface SyncAllWabasResult {
+  wabas: WabaAccountSummary[];
+  // WABAs that could not be refreshed; the others were still synced.
+  failures: {
+    waba_account_id: string;
+    waba_id: string;
+    business_name: string | null;
+    message: string;
+  }[];
+}
+
+export interface DisconnectWabaResult {
+  archived: boolean;
+  meta_waba_id: string;
+  purged: {
+    phone_numbers_count: number;
+    templates_count: number;
+    messages_count: number;
+    messages_sampled: number;
+  };
+  // Set when the active WABA was removed and another one was promoted.
+  new_active_waba_account_id: string | null;
+}
+
+export interface AddPhoneEmbeddedResult {
+  // The WABA the number landed on.
+  waba: WabaAccount;
+  // True when Meta put the number on a WABA the company did not have yet.
+  new_waba: boolean;
 }
 
 export interface MessageLog {

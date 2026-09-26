@@ -1,19 +1,20 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Plus, RefreshCw, Unlink } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 import {
   PHONE_CODE_VERIFICATION_STATUS,
   PHONE_PLATFORM_TYPE,
   UI_MESSAGES,
 } from '@/constants';
-import { pickErrorMessage, formatDate, cn } from '@/lib/utils';
+import { pickErrorMessage, cn } from '@/lib/utils';
 import type {
-  MessageListParams,
-  Pagination as PaginationMeta,
+  AddPhoneEmbeddedResult,
+  DisconnectWabaResult,
   PhoneNumber,
-  TemplateListParams,
+  SyncAllWabasResult,
   WabaAccount,
+  WabaAccountSummary,
 } from '@/types';
 import type {
   AddPhoneEmbeddedPayload,
@@ -29,54 +30,40 @@ import {
   VerifyPhoneDialog,
   RegisterPhoneDialog,
 } from '@/components/dashboard/PhoneActionDialogs';
+import { WabaAccountCard } from '@/components/dashboard/WabaAccountCard';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 type ConnectMode = 'embedded' | 'manual';
-
-interface PurgePreview {
-  templates: number;
-  messages: number;
-  phone_numbers: number;
-}
-
-interface DisconnectPurged {
-  templates_count: number;
-  messages_count: number;
-  phone_numbers_count: number;
-}
 
 // Data source for the WABA view. Both the company admin (acting on its own
 // tenant) and the super admin (acting on a selected company) provide their own
 // implementation, so the same UI drives both.
+//
+// A company can hold several WABAs; exactly one is active (sending, templates
+// and media go through it).
 export interface WabaViewApi {
-  getWaba: () => Promise<{ data: WabaAccount | null }>;
-  connectWaba: (payload: ConnectWabaPayload) => Promise<unknown>;
-  disconnectWaba: () => Promise<{ data: { purged: DisconnectPurged } }>;
-  // Refreshes the WABA metadata + phone number list/statuses from Meta.
-  syncWaba: () => Promise<{ data: WabaAccount | null }>;
-  listTemplates: (
-    params: TemplateListParams,
-  ) => Promise<{ data: unknown[]; meta?: { pagination?: PaginationMeta } }>;
-  listMessages: (
-    params: MessageListParams,
-  ) => Promise<{ data: unknown[]; meta?: { pagination?: PaginationMeta } }>;
-  // Adds a number to the WABA on Meta / picks the default sender. Both return
-  // the refreshed WABA with its phone list.
+  listWabas: () => Promise<{ data: WabaAccountSummary[] }>;
+  connectWaba: (payload: ConnectWabaPayload) => Promise<{ data: WabaAccount }>;
+  // Refreshes every WABA (metadata + phone numbers/statuses) from Meta.
+  syncAll: () => Promise<{ data: SyncAllWabasResult }>;
+  // The per-WABA actions return the refreshed WABA list.
+  syncWaba: (wabaAccountId: string) => Promise<{ data: WabaAccountSummary[] }>;
+  activateWaba: (wabaAccountId: string) => Promise<{ data: WabaAccountSummary[] }>;
+  disconnectWaba: (wabaAccountId: string) => Promise<{ data: DisconnectWabaResult }>;
+  // Adds a number to a WABA on Meta (OTP flow); returns that refreshed WABA.
   addPhoneNumber: (payload: AddPhoneNumberPayload) => Promise<{ data: WabaAccount | null }>;
   // Adds number(s) via Embedded Signup — the path for WhatsApp Business app
-  // numbers (coexistence).
-  addPhoneEmbedded: (payload: AddPhoneEmbeddedPayload) => Promise<{ data: WabaAccount | null }>;
+  // numbers (coexistence). Meta may place them on a new WABA.
+  addPhoneEmbedded: (payload: AddPhoneEmbeddedPayload) => Promise<{ data: AddPhoneEmbeddedResult }>;
   setDefaultPhone: (phoneId: string) => Promise<{ data: WabaAccount | null }>;
   // Phone number ownership verification + Cloud API registration.
   requestPhoneCode: (phoneId: string, codeMethod: string) => Promise<unknown>;
@@ -98,6 +85,9 @@ interface WabaViewProps {
   toolbarStart?: React.ReactNode;
 }
 
+const wabaName = (w: Pick<WabaAccount, 'business_name' | 'waba_id'>) =>
+  w.business_name || w.waba_id;
+
 export function WabaView({
   title,
   description,
@@ -110,39 +100,47 @@ export function WabaView({
   const apiRef = useRef(api);
   apiRef.current = api;
 
-  const [waba, setWaba] = useState<WabaAccount | null>(null);
+  const [wabas, setWabas] = useState<WabaAccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  // Any account-level action in flight; blocks the other actions.
   const [busy, setBusy] = useState(false);
-  const [syncing, setSyncing] = useState(false);
+  const [syncingAll, setSyncingAll] = useState(false);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
   const [mode, setMode] = useState<ConnectMode>('embedded');
+  const [connectAnotherOpen, setConnectAnotherOpen] = useState(false);
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [purgePreview, setPurgePreview] = useState<PurgePreview | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [purgeResult, setPurgeResult] = useState<string | null>(null);
-
-  // Phone number being verified / registered via the action dialogs.
+  const [activateTarget, setActivateTarget] = useState<WabaAccountSummary | null>(null);
+  const [disconnectTarget, setDisconnectTarget] = useState<WabaAccountSummary | null>(null);
+  const [addPhoneTarget, setAddPhoneTarget] = useState<WabaAccountSummary | null>(null);
+  const [defaultTarget, setDefaultTarget] = useState<PhoneNumber | null>(null);
   const [verifyTarget, setVerifyTarget] = useState<PhoneNumber | null>(null);
   const [registerTarget, setRegisterTarget] = useState<PhoneNumber | null>(null);
-  const [phoneActionResult, setPhoneActionResult] = useState<string | null>(null);
-  const [addPhoneOpen, setAddPhoneOpen] = useState(false);
-  const [defaultTarget, setDefaultTarget] = useState<PhoneNumber | null>(null);
-  const [settingDefault, setSettingDefault] = useState(false);
+
+  const activeWaba = wabas.find((w) => w.is_active) ?? null;
+  const locked = busy || syncingAll || !!syncingId;
+
+  const resetMessages = () => {
+    setError(null);
+    setNotice(null);
+  };
+
+  const refresh = useCallback(async () => {
+    const res = await apiRef.current.listWabas();
+    setWabas(res.data ?? []);
+  }, []);
 
   const load = useCallback(async () => {
     if (!ready) {
-      setWaba(null);
+      setWabas([]);
       setLoading(false);
       return;
     }
     setLoading(true);
-    setError(null);
-    setPurgeResult(null);
-    setPhoneActionResult(null);
+    resetMessages();
     try {
-      const res = await apiRef.current.getWaba();
-      setWaba(res.data);
+      await refresh();
     } catch (err) {
       setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
     } finally {
@@ -150,25 +148,40 @@ export function WabaView({
     }
     // reloadKey re-fetches when the selected company changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, reloadKey]);
+  }, [ready, reloadKey, refresh]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const handleEmbeddedConnect = async ({ code, wabaId }: { code: string; wabaId?: string }) => {
+  // Runs an account-level action with shared busy / error handling.
+  const run = async (action: () => Promise<void>) => {
     setBusy(true);
-    setError(null);
-    setPurgeResult(null);
+    resetMessages();
     try {
-      await apiRef.current.connectWaba({ code, waba_id: wabaId });
-      await load();
+      await action();
     } catch (err) {
       setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
     } finally {
       setBusy(false);
     }
   };
+
+  const connectAndReport = async (payload: ConnectWabaPayload) => {
+    const res = await apiRef.current.connectWaba(payload);
+    await refresh();
+    setNotice(
+      res.data?.is_active
+        ? UI_MESSAGES.WABA_ACCOUNTS.CONNECTED_ACTIVE
+        : UI_MESSAGES.WABA_ACCOUNTS.CONNECTED_INACTIVE(wabaName(res.data)),
+    );
+  };
+
+  const handleEmbeddedConnect = ({ code, wabaId }: { code: string; wabaId?: string }) =>
+    run(async () => {
+      await connectAndReport({ code, waba_id: wabaId });
+      setConnectAnotherOpen(false);
+    });
 
   const handleManualConnect = async ({
     access_token,
@@ -178,11 +191,9 @@ export function WabaView({
     waba_id: string;
   }) => {
     setBusy(true);
-    setError(null);
-    setPurgeResult(null);
+    resetMessages();
     try {
-      await apiRef.current.connectWaba({ access_token, waba_id });
-      await load();
+      await connectAndReport({ access_token, waba_id });
     } catch (err) {
       const message = pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR);
       setError(message);
@@ -192,96 +203,111 @@ export function WabaView({
     }
   };
 
-  const openDisconnectDialog = async () => {
-    setError(null);
-    setPurgeResult(null);
-    setConfirmOpen(true);
-    setPreviewLoading(true);
+  const handleSyncAll = async () => {
+    setSyncingAll(true);
+    resetMessages();
     try {
-      const [templates, messages] = await Promise.all([
-        apiRef.current.listTemplates({ pageSize: 1 }),
-        apiRef.current.listMessages({ pageSize: 1 }),
-      ]);
-      setPurgePreview({
-        templates: templates.meta?.pagination?.total ?? templates.data?.length ?? 0,
-        messages: messages.meta?.pagination?.total ?? messages.data?.length ?? 0,
-        phone_numbers: waba?.phoneNumbers?.length ?? 0,
-      });
-    } catch {
-      setPurgePreview({
-        templates: 0,
-        messages: 0,
-        phone_numbers: waba?.phoneNumbers?.length ?? 0,
-      });
+      const res = await apiRef.current.syncAll();
+      setWabas(res.data.wabas);
+      if (res.data.failures.length > 0) {
+        const names = res.data.failures.map((f) => f.business_name || f.waba_id).join(', ');
+        setError(`${UI_MESSAGES.WABA_ACCOUNTS.SYNC_FAILURES(names)} ${res.data.failures[0].message}`);
+      } else {
+        setNotice(UI_MESSAGES.WABA_ACCOUNTS.SYNCED_ALL);
+      }
+    } catch (err) {
+      setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
     } finally {
-      setPreviewLoading(false);
+      setSyncingAll(false);
     }
   };
 
-  const handleDisconnect = async () => {
-    setBusy(true);
-    setError(null);
+  const handleSyncOne = async (waba: WabaAccountSummary) => {
+    setSyncingId(waba.id);
+    resetMessages();
     try {
-      const res = await apiRef.current.disconnectWaba();
+      const res = await apiRef.current.syncWaba(waba.id);
+      setWabas(res.data);
+      setNotice(UI_MESSAGES.WABA_ACCOUNTS.SYNCED_ONE(wabaName(waba)));
+    } catch (err) {
+      setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
+    } finally {
+      setSyncingId(null);
+    }
+  };
+
+  const handleActivate = () => {
+    const target = activateTarget;
+    if (!target) return;
+    return run(async () => {
+      const res = await apiRef.current.activateWaba(target.id);
+      setWabas(res.data);
+      setNotice(UI_MESSAGES.WABA_ACCOUNTS.ACTIVATED(wabaName(target)));
+    }).finally(() => setActivateTarget(null));
+  };
+
+  const handleDisconnect = () => {
+    const target = disconnectTarget;
+    if (!target) return;
+    return run(async () => {
+      const res = await apiRef.current.disconnectWaba(target.id);
       const p = res.data.purged;
-      setPurgeResult(
-        `Disconnected. Purged ${p.templates_count} template(s), ${p.messages_count} message(s), ${p.phone_numbers_count} phone number(s).`,
+      await refresh();
+      const summary = UI_MESSAGES.WABA_ACCOUNTS.DISCONNECTED(
+        p.templates_count,
+        p.messages_count,
+        p.phone_numbers_count,
       );
-      setConfirmOpen(false);
-      setPurgePreview(null);
-      await load();
-    } catch (err) {
-      setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
-    } finally {
-      setBusy(false);
-    }
+      setNotice(
+        res.data.new_active_waba_account_id
+          ? `${summary} ${UI_MESSAGES.WABA_ACCOUNTS.PROMOTED}`
+          : summary,
+      );
+    }).finally(() => setDisconnectTarget(null));
   };
 
-  const handleSync = async () => {
-    setSyncing(true);
-    setError(null);
-    setPurgeResult(null);
-    setPhoneActionResult(null);
-    try {
-      const res = await apiRef.current.syncWaba();
-      setWaba(res.data);
-      setPhoneActionResult(UI_MESSAGES.COMPANY.WABA_SYNCED);
-    } catch (err) {
-      setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
-    } finally {
-      setSyncing(false);
-    }
+  const handleSetDefault = () => {
+    const target = defaultTarget;
+    if (!target) return;
+    return run(async () => {
+      await apiRef.current.setDefaultPhone(target.id);
+      await refresh();
+      setNotice(UI_MESSAGES.PHONE.DEFAULT_UPDATED);
+    }).finally(() => setDefaultTarget(null));
   };
 
   const handlePhoneVerified = async () => {
     await load();
-    setPhoneActionResult(UI_MESSAGES.PHONE.VERIFIED_SUCCESS);
+    setNotice(UI_MESSAGES.PHONE.VERIFIED_SUCCESS);
   };
 
   const handlePhoneRegistered = async () => {
     await load();
-    setPhoneActionResult(UI_MESSAGES.PHONE.REGISTERED_SUCCESS);
+    setNotice(UI_MESSAGES.PHONE.REGISTERED_SUCCESS);
   };
 
-  // A freshly added dedicated number is unverified: open the verify dialog for
-  // it right away so onboarding continues without hunting for it in the table.
-  // App (coexistence) numbers come back already active and skip this.
+  // OTP numbers come back unverified: open the verify dialog for the new one
+  // right away so onboarding continues without hunting for it in the table.
+  // App (coexistence) numbers are already active, but Meta may have put them
+  // on a separate WABA — say so, since it then needs activating.
   const handlePhoneAdded = async (result: unknown, method: AddPhoneMethod) => {
-    const previousIds = new Set((waba?.phoneNumbers ?? []).map((p) => p.id));
+    resetMessages();
+    if (method === 'app') {
+      const { waba, new_waba } = (result as { data: AddPhoneEmbeddedResult }).data;
+      await refresh();
+      setNotice(
+        new_waba
+          ? UI_MESSAGES.PHONE.EMBEDDED_NEW_WABA(wabaName(waba))
+          : UI_MESSAGES.PHONE.EMBEDDED_ADDED_SUCCESS,
+      );
+      return;
+    }
+
+    const previousIds = new Set((addPhoneTarget?.phoneNumbers ?? []).map((p) => p.id));
     const next = (result as { data?: WabaAccount | null })?.data ?? null;
     const added = next?.phoneNumbers?.find((p) => !previousIds.has(p.id));
-    setError(null);
-    setPurgeResult(null);
-    setWaba(next);
-    if (method === 'app') {
-      setPhoneActionResult(
-        added
-          ? UI_MESSAGES.PHONE.EMBEDDED_ADDED_SUCCESS
-          : UI_MESSAGES.PHONE.EMBEDDED_NO_NEW_NUMBER,
-      );
-    } else {
-      setPhoneActionResult(UI_MESSAGES.PHONE.ADDED_SUCCESS);
-    }
+    await refresh();
+    setNotice(UI_MESSAGES.PHONE.ADDED_SUCCESS);
     if (
       added &&
       added.platform_type !== PHONE_PLATFORM_TYPE.CLOUD_API &&
@@ -292,68 +318,35 @@ export function WabaView({
     }
   };
 
-  const handleSetDefault = async () => {
-    if (!defaultTarget) return;
-    setSettingDefault(true);
-    setError(null);
-    setPurgeResult(null);
-    setPhoneActionResult(null);
-    try {
-      const res = await apiRef.current.setDefaultPhone(defaultTarget.id);
-      setWaba(res.data);
-      setPhoneActionResult(UI_MESSAGES.PHONE.DEFAULT_UPDATED);
-      setDefaultTarget(null);
-    } catch (err) {
-      setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
-      setDefaultTarget(null);
-    } finally {
-      setSettingDefault(false);
-    }
-  };
+  const hasWabas = wabas.length > 0;
 
-  // Cloud API onboarding state of a phone number.
-  //
-  // - CLOUD_API → registered, nothing to do.
-  // - ON_PREMISE → held by the WhatsApp Business app (coexistence). Meta
-  //   blocks both SMS verification (it would disconnect the app) and the
-  //   /register endpoint ("not available for SMB businesses") — activation
-  //   happens automatically when the signup's in-app step completes, so we
-  //   show guidance instead of actions.
-  // - otherwise → dedicated number: Verify (until Meta reports VERIFIED),
-  //   then Register.
-  const renderRegistrationCell = (p: PhoneNumber) => {
-    if (p.platform_type === PHONE_PLATFORM_TYPE.CLOUD_API) {
-      return <Badge variant="success">{UI_MESSAGES.PHONE.REGISTERED}</Badge>;
-    }
-    if (p.platform_type === PHONE_PLATFORM_TYPE.ON_PREMISE) {
-      return (
-        <p className="max-w-xs text-xs text-muted-foreground">
-          {UI_MESSAGES.PHONE.APP_LINKED}
-        </p>
-      );
-    }
-    const needsVerify =
-      p.code_verification_status !== PHONE_CODE_VERIFICATION_STATUS.VERIFIED;
-    return (
-      <div className="flex flex-wrap gap-2">
-        {needsVerify ? (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setVerifyTarget(p)}
-            disabled={busy || syncing}
-          >
-            {UI_MESSAGES.PHONE.VERIFY}
-          </Button>
-        ) : null}
-        <Button size="sm" onClick={() => setRegisterTarget(p)} disabled={busy || syncing}>
-          {UI_MESSAGES.PHONE.REGISTER}
-        </Button>
+  const connectForm = (
+    <div className="space-y-6">
+      <div className="inline-flex flex-wrap rounded-md border bg-muted p-1">
+        <button
+          type="button"
+          onClick={() => setMode('embedded')}
+          className={cn(
+            'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+            mode === 'embedded'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          Embedded Signup
+        </button>
       </div>
-    );
-  };
 
-  const isConnected = waba?.status === 'connected';
+      {mode === 'embedded' ? (
+        <div className="space-y-3">
+          <MetaEmbeddedSignupButton onSuccess={handleEmbeddedConnect} disabled={busy} />
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </div>
+      ) : (
+        <ManualTokenForm onSubmit={handleManualConnect} disabled={busy} />
+      )}
+    </div>
+  );
 
   return (
     <>
@@ -361,11 +354,23 @@ export function WabaView({
         title={title}
         description={description}
         actions={
-          ready && !loading && isConnected ? (
-            <Button variant="outline" onClick={handleSync} disabled={syncing || busy}>
-              <RefreshCw className={cn('mr-2 h-4 w-4', syncing && 'animate-spin')} />
-              {syncing ? UI_MESSAGES.COMPANY.WABA_SYNCING : UI_MESSAGES.COMPANY.WABA_SYNC}
-            </Button>
+          ready && !loading && hasWabas ? (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  resetMessages();
+                  setConnectAnotherOpen(true);
+                }}
+                disabled={locked}
+              >
+                <Plus className="mr-2 h-4 w-4" /> {UI_MESSAGES.WABA_ACCOUNTS.CONNECT_ANOTHER}
+              </Button>
+              <Button variant="outline" onClick={handleSyncAll} disabled={locked}>
+                <RefreshCw className={cn('mr-2 h-4 w-4', syncingAll && 'animate-spin')} />
+                {syncingAll ? UI_MESSAGES.COMPANY.WABA_SYNCING : UI_MESSAGES.WABA_ACCOUNTS.SYNC_ALL}
+              </Button>
+            </div>
           ) : null
         }
       />
@@ -384,175 +389,110 @@ export function WabaView({
         </Card>
       ) : (
         <>
-          {purgeResult ? (
+          {notice ? (
             <div className="mb-4 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-900">
-              {purgeResult}
+              {notice}
             </div>
           ) : null}
 
-          {phoneActionResult ? (
-            <div className="mb-4 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-900">
-              {phoneActionResult}
+          {error && hasWabas ? (
+            <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+              {error}
             </div>
           ) : null}
 
           {loading ? <p className="text-muted-foreground">{UI_MESSAGES.COMMON.LOADING}</p> : null}
 
-          {!loading && !isConnected ? (
+          {!loading && !hasWabas ? (
             <Card>
               <CardHeader>
                 <CardTitle>Connect Meta WhatsApp Business Account</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="inline-flex flex-wrap rounded-md border bg-muted p-1">
-                  <button
-                    type="button"
-                    onClick={() => setMode('embedded')}
-                    className={cn(
-                      'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                      mode === 'embedded'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground',
-                    )}
-                  >
-                    Embedded Signup
-                  </button>
-                </div>
-
-                {mode === 'embedded' ? (
-                  <div className="space-y-3">
-                    <MetaEmbeddedSignupButton onSuccess={handleEmbeddedConnect} disabled={busy} />
-                    {error ? <p className="text-sm text-destructive">{error}</p> : null}
-                  </div>
-                ) : (
-                  <ManualTokenForm onSubmit={handleManualConnect} disabled={busy} />
-                )}
-              </CardContent>
+              <CardContent>{connectForm}</CardContent>
             </Card>
           ) : null}
 
-          {!loading && isConnected && waba ? (
+          {!loading && hasWabas ? (
             <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                      <CardTitle className="flex flex-wrap items-center gap-2">
-                        <span className="truncate">{waba.business_name || waba.waba_id}</span>
-                        <CheckCircle2 className="h-5 w-5 shrink-0 text-green-600" />
-                      </CardTitle>
-                      <CardDescription className="break-all">
-                        WABA ID: {waba.waba_id}
-                      </CardDescription>
-                    </div>
-                    <Badge variant="success" className="self-start sm:self-auto">
-                      Connected
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Connected at</p>
-                    <p className="text-sm font-medium">{formatDate(waba.connected_at)}</p>
-                  </div>
-                  <div className="sm:text-right">
-                    <Button
-                      variant="destructive"
-                      onClick={openDisconnectDialog}
-                      disabled={busy}
-                      className="w-full sm:w-auto"
-                    >
-                      <Unlink className="mr-2 h-4 w-4" /> Disconnect & purge
-                    </Button>
-                  </div>
-                  {error ? (
-                    <p className="col-span-full text-sm text-destructive">{error}</p>
-                  ) : null}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <CardTitle className="text-base">Phone numbers</CardTitle>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAddPhoneOpen(true)}
-                      disabled={busy || syncing}
-                      className="self-start sm:self-auto"
-                    >
-                      <Plus className="mr-2 h-4 w-4" /> {UI_MESSAGES.PHONE.ADD}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {waba.phoneNumbers && waba.phoneNumbers.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Display</TableHead>
-                          <TableHead>Phone Number ID</TableHead>
-                          <TableHead>Verified name</TableHead>
-                          <TableHead>Quality</TableHead>
-                          <TableHead>Default</TableHead>
-                          <TableHead>{UI_MESSAGES.PHONE.COL_REGISTRATION}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {waba.phoneNumbers.map((p) => (
-                          <TableRow key={p.id}>
-                            <TableCell className="font-medium">{p.display_phone_number}</TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {p.phone_number_id}
-                            </TableCell>
-                            <TableCell>{p.verified_name ?? '—'}</TableCell>
-                            <TableCell>{p.quality_rating ?? '—'}</TableCell>
-                            <TableCell>
-                              {p.is_default ? (
-                                <Badge variant="success">{UI_MESSAGES.PHONE.DEFAULT}</Badge>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => setDefaultTarget(p)}
-                                  disabled={busy || syncing || settingDefault}
-                                >
-                                  {UI_MESSAGES.PHONE.SET_DEFAULT}
-                                </Button>
-                              )}
-                            </TableCell>
-                            <TableCell>{renderRegistrationCell(p)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      No phone numbers found for this WABA yet.
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+              {!activeWaba ? (
+                <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-900">
+                  {UI_MESSAGES.WABA_ACCOUNTS.NO_ACTIVE}
+                </div>
+              ) : null}
+              {wabas.map((w) => (
+                <WabaAccountCard
+                  key={w.id}
+                  waba={w}
+                  disabled={locked}
+                  syncing={syncingId === w.id}
+                  onActivate={() => setActivateTarget(w)}
+                  onSync={() => handleSyncOne(w)}
+                  onDisconnect={() => setDisconnectTarget(w)}
+                  onAddPhone={() => setAddPhoneTarget(w)}
+                  onSetDefault={setDefaultTarget}
+                  onVerify={setVerifyTarget}
+                  onRegister={setRegisterTarget}
+                />
+              ))}
             </div>
           ) : null}
         </>
       )}
 
+      <Dialog
+        open={connectAnotherOpen}
+        onOpenChange={(next) => (busy || next ? null : setConnectAnotherOpen(false))}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{UI_MESSAGES.WABA_ACCOUNTS.CONNECT_ANOTHER_TITLE}</DialogTitle>
+            <DialogDescription className="mt-1">
+              {UI_MESSAGES.WABA_ACCOUNTS.CONNECT_ANOTHER_DESCRIPTION}
+            </DialogDescription>
+          </DialogHeader>
+          {connectForm}
+        </DialogContent>
+      </Dialog>
+
       <AddPhoneDialog
-        open={addPhoneOpen}
-        onClose={() => setAddPhoneOpen(false)}
-        addPhone={(payload) => apiRef.current.addPhoneNumber(payload)}
+        open={!!addPhoneTarget}
+        onClose={() => setAddPhoneTarget(null)}
+        addPhone={(payload) =>
+          apiRef.current.addPhoneNumber({ ...payload, waba_account_id: addPhoneTarget?.id })
+        }
         addPhoneEmbedded={(payload) => apiRef.current.addPhoneEmbedded(payload)}
-        wabaId={waba?.waba_id}
-        defaultDisplayName={waba?.business_name ?? undefined}
+        targetWabaName={addPhoneTarget ? wabaName(addPhoneTarget) : undefined}
+        defaultDisplayName={addPhoneTarget?.business_name ?? undefined}
         onAdded={handlePhoneAdded}
       />
 
       <ConfirmDialog
+        open={!!activateTarget}
+        onOpenChange={(next) => (busy || next ? null : setActivateTarget(null))}
+        loading={busy}
+        title={UI_MESSAGES.WABA_ACCOUNTS.ACTIVATE_TITLE}
+        description={
+          activateTarget ? (
+            <div className="space-y-2">
+              <p>
+                {UI_MESSAGES.WABA_ACCOUNTS.ACTIVATE_DESCRIPTION(
+                  wabaName(activateTarget),
+                  activeWaba ? wabaName(activeWaba) : null,
+                )}
+              </p>
+              <p className="text-xs">{UI_MESSAGES.WABA_ACCOUNTS.ACTIVATE_TEMPLATES_NOTE}</p>
+            </div>
+          ) : null
+        }
+        confirmLabel={UI_MESSAGES.WABA_ACCOUNTS.ACTIVATE_CONFIRM}
+        cancelLabel={UI_MESSAGES.COMMON.CANCEL}
+        onConfirm={handleActivate}
+      />
+
+      <ConfirmDialog
         open={!!defaultTarget}
-        onOpenChange={(next) => (settingDefault || next ? null : setDefaultTarget(null))}
-        loading={settingDefault}
+        onOpenChange={(next) => (busy || next ? null : setDefaultTarget(null))}
+        loading={busy}
         title={UI_MESSAGES.PHONE.SET_DEFAULT_TITLE}
         description={
           <div className="space-y-2">
@@ -584,31 +524,34 @@ export function WabaView({
       />
 
       <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
+        open={!!disconnectTarget}
+        onOpenChange={(next) => (busy || next ? null : setDisconnectTarget(null))}
         destructive
         loading={busy}
-        title="Disconnect this Meta WABA?"
+        title={
+          disconnectTarget
+            ? UI_MESSAGES.WABA_ACCOUNTS.DISCONNECT_TITLE(wabaName(disconnectTarget))
+            : ''
+        }
         description={
           <div className="space-y-2">
             <p>
               This permanently removes all data associated with this WABA. Once disconnected, it will
               not appear anywhere in the UI again.
             </p>
+            {disconnectTarget?.is_active ? (
+              <p className="text-amber-700">{UI_MESSAGES.WABA_ACCOUNTS.DISCONNECT_ACTIVE_NOTE}</p>
+            ) : null}
             <div className="rounded-md border bg-muted/50 p-3 text-xs">
               <div className="mb-1 font-semibold uppercase tracking-wide text-muted-foreground">
                 Will be deleted
               </div>
-              {previewLoading ? (
-                <p className="text-muted-foreground">Calculating…</p>
-              ) : (
-                <ul className="space-y-0.5">
-                  <li>· {purgePreview?.templates ?? 0} message template(s)</li>
-                  <li>· {purgePreview?.messages ?? 0} message log(s)</li>
-                  <li>· {purgePreview?.phone_numbers ?? 0} phone number(s)</li>
-                  <li>· The WABA connection itself</li>
-                </ul>
-              )}
+              <ul className="space-y-0.5">
+                <li>· {disconnectTarget?.templates_count ?? 0} message template(s)</li>
+                <li>· {disconnectTarget?.messages_count ?? 0} message log(s)</li>
+                <li>· {disconnectTarget?.phoneNumbers?.length ?? 0} phone number(s)</li>
+                <li>· The WABA connection itself</li>
+              </ul>
             </div>
             <p className="text-xs text-muted-foreground">
               A snapshot is archived to{' '}
