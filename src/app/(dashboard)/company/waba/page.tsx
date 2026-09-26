@@ -3,18 +3,17 @@
 import { useMemo } from 'react';
 import { UI_MESSAGES } from '@/constants';
 import { companyApi } from '@/lib/api/company.api';
-import { templateApi } from '@/lib/api/template.api';
 import { WabaView, type WabaViewApi } from '@/components/dashboard/WabaView';
 
 export default function WabaPage() {
   const api: WabaViewApi = useMemo(
     () => ({
-      getWaba: () => companyApi.getWaba(),
+      listWabas: () => companyApi.listWabas(),
       connectWaba: (payload) => companyApi.connectWaba(payload),
-      disconnectWaba: () => companyApi.disconnectWaba(),
-      syncWaba: () => companyApi.syncWaba(),
-      listTemplates: (params) => templateApi.list(params),
-      listMessages: (params) => companyApi.listMessages(params),
+      syncAll: () => companyApi.syncWaba(),
+      syncWaba: (wabaAccountId) => companyApi.syncWabaAccount(wabaAccountId),
+      activateWaba: (wabaAccountId) => companyApi.activateWaba(wabaAccountId),
+      disconnectWaba: (wabaAccountId) => companyApi.disconnectWabaAccount(wabaAccountId),
       addPhoneNumber: (payload) => companyApi.addPhoneNumber(payload),
       addPhoneEmbedded: (payload) => companyApi.addPhoneEmbedded(payload),
       setDefaultPhone: (phoneId) => companyApi.setDefaultPhone(phoneId),

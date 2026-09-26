@@ -126,6 +126,48 @@ export const UI_MESSAGES = {
       'This template has a media header: upload the file first and pass the returned media id as variables.header.',
     NO_TOKEN: 'No API token found for this company. Please create the API token first.',
   },
+  // A company can hold several WhatsApp Business Accounts; one is active.
+  WABA_ACCOUNTS: {
+    ACTIVE: 'Active',
+    INACTIVE: 'Inactive',
+    ACTIVE_HINT: 'Used for sending messages, templates and media.',
+    INACTIVE_HINT:
+      'Connected but not used for sending. Make it active to send messages and use its templates.',
+    NO_ACTIVE:
+      'None of the connected WhatsApp Business Accounts is active, so messages cannot be sent. Make one of them active.',
+    CONNECTED_AT: 'Connected at',
+    PHONE_NUMBERS: 'Phone numbers',
+    NO_PHONES: 'No phone numbers found for this WhatsApp Business Account yet.',
+    MAKE_ACTIVE: 'Make active',
+    ACTIVATE_TITLE: 'Make this account active?',
+    ACTIVATE_DESCRIPTION: (next: string, current: string | null) =>
+      current
+        ? `Messages, templates and media will switch from “${current}” to “${next}”. “${current}” stays connected and can be made active again at any time.`
+        : `Messages, templates and media will use “${next}”.`,
+    ACTIVATE_TEMPLATES_NOTE:
+      'Templates are per account — the Templates page will show this account’s templates (synced now in the background).',
+    ACTIVATE_CONFIRM: 'Make active',
+    ACTIVATED: (name: string) => `“${name}” is now the active WhatsApp Business Account.`,
+    SYNC_ONE: 'Sync',
+    SYNC_ALL: 'Sync all from Meta',
+    SYNCED_ONE: (name: string) => `“${name}” refreshed from Meta.`,
+    SYNCED_ALL: 'All WhatsApp Business Accounts refreshed from Meta.',
+    SYNC_FAILURES: (names: string) => `Could not refresh: ${names}.`,
+    CONNECT_ANOTHER: 'Connect another account',
+    CONNECT_ANOTHER_TITLE: 'Connect another WhatsApp Business Account',
+    CONNECT_ANOTHER_DESCRIPTION:
+      'Connects an additional WhatsApp Business Account to this company. It is added as inactive — make it active when you want to send from it.',
+    CONNECTED_ACTIVE: 'WhatsApp Business Account connected and set as active.',
+    CONNECTED_INACTIVE: (name: string) =>
+      `“${name}” connected as an inactive account. Make it active to send messages from it.`,
+    DISCONNECT: 'Disconnect & purge',
+    DISCONNECT_TITLE: (name: string) => `Disconnect “${name}”?`,
+    DISCONNECT_ACTIVE_NOTE:
+      'This is the active account. Another connected account (the most recently connected) will become active automatically.',
+    DISCONNECTED: (templates: number, messages: number, phones: number) =>
+      `Disconnected. Purged ${templates} template(s), ${messages} message(s), ${phones} phone number(s).`,
+    PROMOTED: 'Another connected account is now active.',
+  },
   PHONE: {
     COL_REGISTRATION: 'Cloud API',
     REGISTERED: 'Registered',
@@ -159,13 +201,17 @@ export const UI_MESSAGES = {
     ADD_METHOD_NEW: 'New number',
     ADD_METHOD_NEW_HINT: 'Not on WhatsApp — verify via OTP',
     ADD_APP_DESCRIPTION:
-      'Connects a number that is already running on the WhatsApp Business app, so it keeps working in the app and also on the Cloud API. A Meta window opens: enter the number, confirm with the code WhatsApp sends to the app, and choose this company’s existing WhatsApp Business Account when asked.',
-    ADD_APP_WABA_HINT: 'Select this WhatsApp Business Account in the Meta window:',
+      'Connects a number that is already running on the WhatsApp Business app, so it keeps working in the app and also on the Cloud API. A Meta window opens: enter the number and confirm with the code WhatsApp sends to the app.',
+    ADD_APP_NEW_WABA_NOTE:
+      'Meta usually places app numbers on their own WhatsApp Business Account. If it does, that account is added below as a separate, inactive account — make it active to send from it.',
     ADD_APP_BUTTON: 'Continue with Meta',
     ADD_APP_PROCESSING: 'Finishing up with Meta…',
     ADD_DESCRIPTION:
       'Adds a new number to this WhatsApp Business Account on Meta. The number must not be active on any other WhatsApp account. After adding, verify it with an SMS / voice code and register it with the Cloud API.',
+    ADD_TARGET_WABA: 'Will be added to:',
     EMBEDDED_ADDED_SUCCESS: 'Signup completed and phone numbers refreshed from Meta.',
+    EMBEDDED_NEW_WABA: (name: string) =>
+      `Signup completed. Meta placed the number on a separate WhatsApp Business Account (“${name}”), now listed below. Make it active to send messages from it.`,
     EMBEDDED_NO_NEW_NUMBER:
       'Signup completed, but Meta did not report a new number on this WhatsApp Business Account yet. Try "Sync from Meta" in a minute.',
     CC_LABEL: 'Country code',

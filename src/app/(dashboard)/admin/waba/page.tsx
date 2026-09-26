@@ -41,12 +41,13 @@ function AdminWabaInner() {
 
   const api: WabaViewApi = useMemo(
     () => ({
-      getWaba: () => superAdminApi.getCompanyWaba(companyId),
+      listWabas: () => superAdminApi.listCompanyWabas(companyId),
       connectWaba: (payload) => superAdminApi.connectCompanyWaba(companyId, payload),
-      disconnectWaba: () => superAdminApi.disconnectCompanyWaba(companyId),
-      syncWaba: () => superAdminApi.syncCompanyWaba(companyId),
-      listTemplates: (params) => superAdminApi.listCompanyTemplates(companyId, params),
-      listMessages: (params) => superAdminApi.listCompanyMessages(companyId, params),
+      syncAll: () => superAdminApi.syncCompanyWaba(companyId),
+      syncWaba: (wabaAccountId) => superAdminApi.syncCompanyWabaAccount(companyId, wabaAccountId),
+      activateWaba: (wabaAccountId) => superAdminApi.activateCompanyWaba(companyId, wabaAccountId),
+      disconnectWaba: (wabaAccountId) =>
+        superAdminApi.disconnectCompanyWabaAccount(companyId, wabaAccountId),
       addPhoneNumber: (payload) => superAdminApi.addCompanyPhoneNumber(companyId, payload),
       addPhoneEmbedded: (payload) => superAdminApi.addCompanyPhoneEmbedded(companyId, payload),
       setDefaultPhone: (phoneId) => superAdminApi.setCompanyDefaultPhone(companyId, phoneId),

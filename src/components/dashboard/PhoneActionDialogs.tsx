@@ -271,8 +271,9 @@ interface AddPhoneDialogProps {
   onClose: () => void;
   addPhone: (payload: AddPhoneNumberPayload) => Promise<unknown>;
   addPhoneEmbedded: (payload: AddPhoneEmbeddedPayload) => Promise<unknown>;
-  // The connected WABA the Embedded Signup must land on (shown as guidance).
-  wabaId?: string;
+  // Name of the WABA a new (OTP) number is added to. App numbers land wherever
+  // Meta puts them — often a separate WABA.
+  targetWabaName?: string;
   // Defaults the display name field (e.g. the WABA's business name).
   defaultDisplayName?: string;
   // Called after the number was added (e.g. to reload the list and open verify).
@@ -289,7 +290,7 @@ export function AddPhoneDialog({
   onClose,
   addPhone,
   addPhoneEmbedded,
-  wabaId,
+  targetWabaName,
   defaultDisplayName,
   onAdded,
 }: AddPhoneDialogProps) {
@@ -403,12 +404,9 @@ export function AddPhoneDialog({
           {method === 'app' ? (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">{UI_MESSAGES.PHONE.ADD_APP_DESCRIPTION}</p>
-              {wabaId ? (
-                <p className="rounded-md border bg-muted/50 p-2 text-xs">
-                  {UI_MESSAGES.PHONE.ADD_APP_WABA_HINT}{' '}
-                  <span className="font-mono font-medium">{wabaId}</span>
-                </p>
-              ) : null}
+              <p className="rounded-md border bg-muted/50 p-2 text-xs">
+                {UI_MESSAGES.PHONE.ADD_APP_NEW_WABA_NOTE}
+              </p>
               <MetaEmbeddedSignupButton
                 onSuccess={handleEmbeddedSuccess}
                 disabled={busy}
@@ -418,6 +416,12 @@ export function AddPhoneDialog({
           ) : (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">{UI_MESSAGES.PHONE.ADD_DESCRIPTION}</p>
+              {targetWabaName ? (
+                <p className="rounded-md border bg-muted/50 p-2 text-xs">
+                  {UI_MESSAGES.PHONE.ADD_TARGET_WABA}{' '}
+                  <span className="font-medium">{targetWabaName}</span>
+                </p>
+              ) : null}
               <div className="grid grid-cols-[96px_1fr] gap-3">
                 <div>
                   <label className="mb-1 block text-xs text-muted-foreground">

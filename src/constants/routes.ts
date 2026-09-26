@@ -62,6 +62,14 @@ export const API_ROUTES = {
     COMPANY_WABA_DISCONNECT: (companyId: string) =>
       `/super-admin/companies/${companyId}/waba/disconnect`,
     COMPANY_WABA_SYNC: (companyId: string) => `/super-admin/companies/${companyId}/waba/sync`,
+    COMPANY_WABA_ACCOUNTS: (companyId: string) =>
+      `/super-admin/companies/${companyId}/waba/accounts`,
+    COMPANY_WABA_ACCOUNT_ACTIVATE: (companyId: string, wabaAccountId: string) =>
+      `/super-admin/companies/${companyId}/waba/accounts/${wabaAccountId}/activate`,
+    COMPANY_WABA_ACCOUNT_SYNC: (companyId: string, wabaAccountId: string) =>
+      `/super-admin/companies/${companyId}/waba/accounts/${wabaAccountId}/sync`,
+    COMPANY_WABA_ACCOUNT_DISCONNECT: (companyId: string, wabaAccountId: string) =>
+      `/super-admin/companies/${companyId}/waba/accounts/${wabaAccountId}/disconnect`,
     COMPANY_WABA_PHONES: (companyId: string) =>
       `/super-admin/companies/${companyId}/waba/phone-numbers`,
     COMPANY_WABA_PHONES_EMBEDDED: (companyId: string) =>
@@ -130,6 +138,12 @@ export const API_ROUTES = {
     WABA_CONNECT: '/company/waba/connect',
     WABA_DISCONNECT: '/company/waba/disconnect',
     WABA_SYNC: '/company/waba/sync',
+    WABA_ACCOUNTS: '/company/waba/accounts',
+    WABA_ACCOUNT_ACTIVATE: (wabaAccountId: string) =>
+      `/company/waba/accounts/${wabaAccountId}/activate`,
+    WABA_ACCOUNT_SYNC: (wabaAccountId: string) => `/company/waba/accounts/${wabaAccountId}/sync`,
+    WABA_ACCOUNT_DISCONNECT: (wabaAccountId: string) =>
+      `/company/waba/accounts/${wabaAccountId}/disconnect`,
     WABA_PHONES: '/company/waba/phone-numbers',
     WABA_PHONES_EMBEDDED: '/company/waba/phone-numbers/embedded',
     WABA_PHONE_SET_DEFAULT: (id: string) => `/company/waba/phone-numbers/${id}/default`,
