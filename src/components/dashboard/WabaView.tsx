@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CheckCircle2, RefreshCw, Unlink } from 'lucide-react';
+import { CheckCircle2, Plus, RefreshCw, Unlink } from 'lucide-react';
 import {
   PHONE_CODE_VERIFICATION_STATUS,
   PHONE_PLATFORM_TYPE,
@@ -15,11 +15,17 @@ import type {
   TemplateListParams,
   WabaAccount,
 } from '@/types';
-import type { ConnectWabaPayload } from '@/lib/api/company.api';
+import type {
+  AddPhoneEmbeddedPayload,
+  AddPhoneNumberPayload,
+  ConnectWabaPayload,
+} from '@/lib/api/company.api';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { MetaEmbeddedSignupButton } from '@/components/meta/MetaEmbeddedSignupButton';
 import { ManualTokenForm } from '@/components/meta/ManualTokenForm';
 import {
+  AddPhoneDialog,
+  type AddPhoneMethod,
   VerifyPhoneDialog,
   RegisterPhoneDialog,
 } from '@/components/dashboard/PhoneActionDialogs';
@@ -65,6 +71,13 @@ export interface WabaViewApi {
   listMessages: (
     params: MessageListParams,
   ) => Promise<{ data: unknown[]; meta?: { pagination?: PaginationMeta } }>;
+  // Adds a number to the WABA on Meta / picks the default sender. Both return
+  // the refreshed WABA with its phone list.
+  addPhoneNumber: (payload: AddPhoneNumberPayload) => Promise<{ data: WabaAccount | null }>;
+  // Adds number(s) via Embedded Signup — the path for WhatsApp Business app
+  // numbers (coexistence).
+  addPhoneEmbedded: (payload: AddPhoneEmbeddedPayload) => Promise<{ data: WabaAccount | null }>;
+  setDefaultPhone: (phoneId: string) => Promise<{ data: WabaAccount | null }>;
   // Phone number ownership verification + Cloud API registration.
   requestPhoneCode: (phoneId: string, codeMethod: string) => Promise<unknown>;
   verifyPhoneCode: (phoneId: string, code: string) => Promise<unknown>;
@@ -113,6 +126,9 @@ export function WabaView({
   const [verifyTarget, setVerifyTarget] = useState<PhoneNumber | null>(null);
   const [registerTarget, setRegisterTarget] = useState<PhoneNumber | null>(null);
   const [phoneActionResult, setPhoneActionResult] = useState<string | null>(null);
+  const [addPhoneOpen, setAddPhoneOpen] = useState(false);
+  const [defaultTarget, setDefaultTarget] = useState<PhoneNumber | null>(null);
+  const [settingDefault, setSettingDefault] = useState(false);
 
   const load = useCallback(async () => {
     if (!ready) {
@@ -245,6 +261,54 @@ export function WabaView({
   const handlePhoneRegistered = async () => {
     await load();
     setPhoneActionResult(UI_MESSAGES.PHONE.REGISTERED_SUCCESS);
+  };
+
+  // A freshly added dedicated number is unverified: open the verify dialog for
+  // it right away so onboarding continues without hunting for it in the table.
+  // App (coexistence) numbers come back already active and skip this.
+  const handlePhoneAdded = async (result: unknown, method: AddPhoneMethod) => {
+    const previousIds = new Set((waba?.phoneNumbers ?? []).map((p) => p.id));
+    const next = (result as { data?: WabaAccount | null })?.data ?? null;
+    const added = next?.phoneNumbers?.find((p) => !previousIds.has(p.id));
+    setError(null);
+    setPurgeResult(null);
+    setWaba(next);
+    if (method === 'app') {
+      setPhoneActionResult(
+        added
+          ? UI_MESSAGES.PHONE.EMBEDDED_ADDED_SUCCESS
+          : UI_MESSAGES.PHONE.EMBEDDED_NO_NEW_NUMBER,
+      );
+    } else {
+      setPhoneActionResult(UI_MESSAGES.PHONE.ADDED_SUCCESS);
+    }
+    if (
+      added &&
+      added.platform_type !== PHONE_PLATFORM_TYPE.CLOUD_API &&
+      added.platform_type !== PHONE_PLATFORM_TYPE.ON_PREMISE &&
+      added.code_verification_status !== PHONE_CODE_VERIFICATION_STATUS.VERIFIED
+    ) {
+      setVerifyTarget(added);
+    }
+  };
+
+  const handleSetDefault = async () => {
+    if (!defaultTarget) return;
+    setSettingDefault(true);
+    setError(null);
+    setPurgeResult(null);
+    setPhoneActionResult(null);
+    try {
+      const res = await apiRef.current.setDefaultPhone(defaultTarget.id);
+      setWaba(res.data);
+      setPhoneActionResult(UI_MESSAGES.PHONE.DEFAULT_UPDATED);
+      setDefaultTarget(null);
+    } catch (err) {
+      setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
+      setDefaultTarget(null);
+    } finally {
+      setSettingDefault(false);
+    }
   };
 
   // Cloud API onboarding state of a phone number.
@@ -409,7 +473,18 @@ export function WabaView({
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Phone numbers</CardTitle>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <CardTitle className="text-base">Phone numbers</CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAddPhoneOpen(true)}
+                      disabled={busy || syncing}
+                      className="self-start sm:self-auto"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> {UI_MESSAGES.PHONE.ADD}
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {waba.phoneNumbers && waba.phoneNumbers.length > 0 ? (
@@ -434,7 +509,18 @@ export function WabaView({
                             <TableCell>{p.verified_name ?? '—'}</TableCell>
                             <TableCell>{p.quality_rating ?? '—'}</TableCell>
                             <TableCell>
-                              {p.is_default ? <Badge variant="success">Default</Badge> : null}
+                              {p.is_default ? (
+                                <Badge variant="success">{UI_MESSAGES.PHONE.DEFAULT}</Badge>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setDefaultTarget(p)}
+                                  disabled={busy || syncing || settingDefault}
+                                >
+                                  {UI_MESSAGES.PHONE.SET_DEFAULT}
+                                </Button>
+                              )}
                             </TableCell>
                             <TableCell>{renderRegistrationCell(p)}</TableCell>
                           </TableRow>
@@ -452,6 +538,35 @@ export function WabaView({
           ) : null}
         </>
       )}
+
+      <AddPhoneDialog
+        open={addPhoneOpen}
+        onClose={() => setAddPhoneOpen(false)}
+        addPhone={(payload) => apiRef.current.addPhoneNumber(payload)}
+        addPhoneEmbedded={(payload) => apiRef.current.addPhoneEmbedded(payload)}
+        wabaId={waba?.waba_id}
+        defaultDisplayName={waba?.business_name ?? undefined}
+        onAdded={handlePhoneAdded}
+      />
+
+      <ConfirmDialog
+        open={!!defaultTarget}
+        onOpenChange={(next) => (settingDefault || next ? null : setDefaultTarget(null))}
+        loading={settingDefault}
+        title={UI_MESSAGES.PHONE.SET_DEFAULT_TITLE}
+        description={
+          <div className="space-y-2">
+            <p className="font-medium text-foreground">{defaultTarget?.display_phone_number}</p>
+            <p>{UI_MESSAGES.PHONE.SET_DEFAULT_DESCRIPTION}</p>
+            {defaultTarget && defaultTarget.platform_type !== PHONE_PLATFORM_TYPE.CLOUD_API ? (
+              <p className="text-amber-700">{UI_MESSAGES.PHONE.SET_DEFAULT_NOT_READY}</p>
+            ) : null}
+          </div>
+        }
+        confirmLabel={UI_MESSAGES.PHONE.SET_DEFAULT_CONFIRM}
+        cancelLabel={UI_MESSAGES.COMMON.CANCEL}
+        onConfirm={handleSetDefault}
+      />
 
       <VerifyPhoneDialog
         phone={verifyTarget}

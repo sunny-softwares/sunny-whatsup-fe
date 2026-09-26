@@ -47,6 +47,9 @@ function AdminWabaInner() {
       syncWaba: () => superAdminApi.syncCompanyWaba(companyId),
       listTemplates: (params) => superAdminApi.listCompanyTemplates(companyId, params),
       listMessages: (params) => superAdminApi.listCompanyMessages(companyId, params),
+      addPhoneNumber: (payload) => superAdminApi.addCompanyPhoneNumber(companyId, payload),
+      addPhoneEmbedded: (payload) => superAdminApi.addCompanyPhoneEmbedded(companyId, payload),
+      setDefaultPhone: (phoneId) => superAdminApi.setCompanyDefaultPhone(companyId, phoneId),
       requestPhoneCode: (phoneId, codeMethod) =>
         superAdminApi.requestCompanyPhoneCode(companyId, phoneId, { code_method: codeMethod }),
       verifyPhoneCode: (phoneId, code) =>

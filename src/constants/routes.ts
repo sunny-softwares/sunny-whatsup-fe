@@ -62,6 +62,12 @@ export const API_ROUTES = {
     COMPANY_WABA_DISCONNECT: (companyId: string) =>
       `/super-admin/companies/${companyId}/waba/disconnect`,
     COMPANY_WABA_SYNC: (companyId: string) => `/super-admin/companies/${companyId}/waba/sync`,
+    COMPANY_WABA_PHONES: (companyId: string) =>
+      `/super-admin/companies/${companyId}/waba/phone-numbers`,
+    COMPANY_WABA_PHONES_EMBEDDED: (companyId: string) =>
+      `/super-admin/companies/${companyId}/waba/phone-numbers/embedded`,
+    COMPANY_WABA_PHONE_SET_DEFAULT: (companyId: string, id: string) =>
+      `/super-admin/companies/${companyId}/waba/phone-numbers/${id}/default`,
     COMPANY_WABA_PHONE_REQUEST_CODE: (companyId: string, id: string) =>
       `/super-admin/companies/${companyId}/waba/phone-numbers/${id}/request-code`,
     COMPANY_WABA_PHONE_VERIFY_CODE: (companyId: string, id: string) =>
@@ -124,6 +130,9 @@ export const API_ROUTES = {
     WABA_CONNECT: '/company/waba/connect',
     WABA_DISCONNECT: '/company/waba/disconnect',
     WABA_SYNC: '/company/waba/sync',
+    WABA_PHONES: '/company/waba/phone-numbers',
+    WABA_PHONES_EMBEDDED: '/company/waba/phone-numbers/embedded',
+    WABA_PHONE_SET_DEFAULT: (id: string) => `/company/waba/phone-numbers/${id}/default`,
     WABA_PHONE_REQUEST_CODE: (id: string) => `/company/waba/phone-numbers/${id}/request-code`,
     WABA_PHONE_VERIFY_CODE: (id: string) => `/company/waba/phone-numbers/${id}/verify-code`,
     WABA_PHONE_REGISTER: (id: string) => `/company/waba/phone-numbers/${id}/register`,

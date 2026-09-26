@@ -19,7 +19,12 @@ import type {
   TemplateListParams,
   WabaAccount,
 } from '@/types';
-import type { ConnectWabaPayload, RequestPhoneCodePayload } from './company.api';
+import type {
+  AddPhoneEmbeddedPayload,
+  AddPhoneNumberPayload,
+  ConnectWabaPayload,
+  RequestPhoneCodePayload,
+} from './company.api';
 
 export const superAdminApi = {
   async stats() {
@@ -123,6 +128,26 @@ export const superAdminApi = {
   async syncCompanyWaba(companyId: string) {
     const { data } = await apiClient.post<ApiResponseSuccess<WabaAccount>>(
       API_ROUTES.SUPER_ADMIN.COMPANY_WABA_SYNC(companyId),
+    );
+    return data;
+  },
+  async addCompanyPhoneNumber(companyId: string, payload: AddPhoneNumberPayload) {
+    const { data } = await apiClient.post<ApiResponseSuccess<WabaAccount>>(
+      API_ROUTES.SUPER_ADMIN.COMPANY_WABA_PHONES(companyId),
+      payload,
+    );
+    return data;
+  },
+  async addCompanyPhoneEmbedded(companyId: string, payload: AddPhoneEmbeddedPayload) {
+    const { data } = await apiClient.post<ApiResponseSuccess<WabaAccount>>(
+      API_ROUTES.SUPER_ADMIN.COMPANY_WABA_PHONES_EMBEDDED(companyId),
+      payload,
+    );
+    return data;
+  },
+  async setCompanyDefaultPhone(companyId: string, phoneId: string) {
+    const { data } = await apiClient.post<ApiResponseSuccess<WabaAccount>>(
+      API_ROUTES.SUPER_ADMIN.COMPANY_WABA_PHONE_SET_DEFAULT(companyId, phoneId),
     );
     return data;
   },
