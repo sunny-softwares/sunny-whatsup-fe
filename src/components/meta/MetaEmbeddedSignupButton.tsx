@@ -20,6 +20,7 @@ declare global {
 interface MetaEmbeddedSignupButtonProps {
   onSuccess: (payload: { code: string; wabaId?: string }) => void;
   disabled?: boolean;
+  label?: string;
 }
 
 /**
@@ -34,7 +35,11 @@ interface MetaEmbeddedSignupButtonProps {
  * the configuration is set up in Meta App Dashboard → WhatsApp → Configuration.
  * No client-side toggle is required.
  */
-export function MetaEmbeddedSignupButton({ onSuccess, disabled }: MetaEmbeddedSignupButtonProps) {
+export function MetaEmbeddedSignupButton({
+  onSuccess,
+  disabled,
+  label = 'Connect with Meta',
+}: MetaEmbeddedSignupButtonProps) {
   const [sdkReady, setSdkReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,7 +79,13 @@ export function MetaEmbeddedSignupButton({ onSuccess, disabled }: MetaEmbeddedSi
       if (typeof event.data !== 'string') return;
       try {
         const data = JSON.parse(event.data);
-        if (data.type === 'WA_EMBEDDED_SIGNUP' && data.event === 'FINISH') {
+        // FINISH (new number), FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING
+        // (coexistence), FINISH_ONLY_WABA — all carry the customer's WABA id.
+        if (
+          data.type === 'WA_EMBEDDED_SIGNUP' &&
+          typeof data.event === 'string' &&
+          data.event.startsWith('FINISH')
+        ) {
           const wabaId = data?.data?.waba_id;
           if (wabaId) {
             (window as Window & { __waba_id__?: string }).__waba_id__ = wabaId;
@@ -93,6 +104,10 @@ export function MetaEmbeddedSignupButton({ onSuccess, disabled }: MetaEmbeddedSi
       setError('Meta SDK has not finished loading. Please retry in a moment.');
       return;
     }
+    // Drop a WABA id left over from an earlier popup so it can't be mistaken
+    // for this session's result.
+    delete (window as Window & { __waba_id__?: string }).__waba_id__;
+    setError(null);
     window.FB.login(
       (response) => {
         const code = response?.authResponse?.code;
@@ -115,7 +130,7 @@ export function MetaEmbeddedSignupButton({ onSuccess, disabled }: MetaEmbeddedSi
   return (
     <div className="space-y-2">
       <Button onClick={handleSignup} disabled={disabled || !sdkReady}>
-        Connect with Meta
+        {label}
       </Button>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
       {!sdkReady && !error ? (

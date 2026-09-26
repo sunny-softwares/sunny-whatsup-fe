@@ -21,6 +21,20 @@ export interface ConnectWabaPayload {
   redirect_uri?: string;
 }
 
+export interface AddPhoneNumberPayload {
+  // Country calling code and national number, digits only.
+  cc: string;
+  phone_number: string;
+  verified_name: string;
+}
+
+// Adding numbers via Embedded Signup (e.g. a WhatsApp Business app number
+// through coexistence): the popup's auth code plus the WABA it reported.
+export interface AddPhoneEmbeddedPayload {
+  code: string;
+  waba_id?: string;
+}
+
 export interface RequestPhoneCodePayload {
   code_method?: string;
   language?: string;
@@ -81,6 +95,26 @@ export const companyApi = {
   async syncWaba() {
     const { data } = await apiClient.post<ApiResponseSuccess<WabaAccount>>(
       API_ROUTES.COMPANY.WABA_SYNC,
+    );
+    return data;
+  },
+  async addPhoneNumber(payload: AddPhoneNumberPayload) {
+    const { data } = await apiClient.post<ApiResponseSuccess<WabaAccount>>(
+      API_ROUTES.COMPANY.WABA_PHONES,
+      payload,
+    );
+    return data;
+  },
+  async addPhoneEmbedded(payload: AddPhoneEmbeddedPayload) {
+    const { data } = await apiClient.post<ApiResponseSuccess<WabaAccount>>(
+      API_ROUTES.COMPANY.WABA_PHONES_EMBEDDED,
+      payload,
+    );
+    return data;
+  },
+  async setDefaultPhone(phoneId: string) {
+    const { data } = await apiClient.post<ApiResponseSuccess<WabaAccount>>(
+      API_ROUTES.COMPANY.WABA_PHONE_SET_DEFAULT(phoneId),
     );
     return data;
   },

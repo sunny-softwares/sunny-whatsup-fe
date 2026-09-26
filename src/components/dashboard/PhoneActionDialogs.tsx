@@ -8,8 +8,10 @@ import {
   UI_MESSAGES,
   type PhoneCodeMethod,
 } from '@/constants';
-import { pickErrorMessage } from '@/lib/utils';
+import { cn, pickErrorMessage } from '@/lib/utils';
 import type { PhoneNumber } from '@/types';
+import type { AddPhoneEmbeddedPayload, AddPhoneNumberPayload } from '@/lib/api/company.api';
+import { MetaEmbeddedSignupButton } from '@/components/meta/MetaEmbeddedSignupButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -246,6 +248,240 @@ export function RegisterPhoneDialog({
           <Button onClick={handleRegister} disabled={busy || !pin}>
             {busy ? UI_MESSAGES.PHONE.REGISTERING : UI_MESSAGES.PHONE.REGISTER_SUBMIT}
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const CC_PATTERN = /^\d{1,4}$/;
+const NATIONAL_NUMBER_PATTERN = /^\d{4,15}$/;
+
+// Keeps digits only so users can paste "+91", "98765 43210", etc.
+const digitsOnly = (value: string) => value.replace(/\D/g, '');
+
+// How a number is brought onto the WABA:
+// - app → a number already on the WhatsApp Business app (coexistence). Must go
+//   through Embedded Signup; SMS/voice verification would disconnect the app.
+// - new → a number not on WhatsApp yet, added directly and verified via OTP.
+export type AddPhoneMethod = 'app' | 'new';
+
+interface AddPhoneDialogProps {
+  open: boolean;
+  onClose: () => void;
+  addPhone: (payload: AddPhoneNumberPayload) => Promise<unknown>;
+  addPhoneEmbedded: (payload: AddPhoneEmbeddedPayload) => Promise<unknown>;
+  // The connected WABA the Embedded Signup must land on (shown as guidance).
+  wabaId?: string;
+  // Defaults the display name field (e.g. the WABA's business name).
+  defaultDisplayName?: string;
+  // Called after the number was added (e.g. to reload the list and open verify).
+  onAdded: (result: unknown, method: AddPhoneMethod) => void | Promise<void>;
+}
+
+/**
+ * Adds a business phone number to the connected WABA, either by connecting a
+ * WhatsApp Business app number through Embedded Signup (coexistence) or by
+ * adding a brand-new number that then goes through verify → register.
+ */
+export function AddPhoneDialog({
+  open,
+  onClose,
+  addPhone,
+  addPhoneEmbedded,
+  wabaId,
+  defaultDisplayName,
+  onAdded,
+}: AddPhoneDialogProps) {
+  const [method, setMethod] = useState<AddPhoneMethod>('app');
+  const [cc, setCc] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [verifiedName, setVerifiedName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Start fresh every time the dialog opens.
+  useEffect(() => {
+    if (!open) return;
+    setMethod('app');
+    setCc('');
+    setPhoneNumber('');
+    setVerifiedName(defaultDisplayName ?? '');
+    setBusy(false);
+    setError(null);
+  }, [open, defaultDisplayName]);
+
+  const selectMethod = (next: AddPhoneMethod) => {
+    setMethod(next);
+    setError(null);
+  };
+
+  const handleAdd = async () => {
+    const name = verifiedName.trim();
+    if (!CC_PATTERN.test(cc)) {
+      setError(UI_MESSAGES.PHONE.INVALID_CC);
+      return;
+    }
+    if (!NATIONAL_NUMBER_PATTERN.test(phoneNumber)) {
+      setError(UI_MESSAGES.PHONE.INVALID_NUMBER);
+      return;
+    }
+    if (!name) {
+      setError(UI_MESSAGES.PHONE.DISPLAY_NAME_REQUIRED);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await addPhone({ cc, phone_number: phoneNumber, verified_name: name });
+      onClose();
+      await onAdded(result, 'new');
+    } catch (err) {
+      setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleEmbeddedSuccess = async ({ code, wabaId: signupWabaId }: { code: string; wabaId?: string }) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await addPhoneEmbedded({ code, waba_id: signupWabaId });
+      onClose();
+      await onAdded(result, 'app');
+    } catch (err) {
+      setError(pickErrorMessage(err, UI_MESSAGES.AUTH.GENERIC_ERROR));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const methodOptions: { value: AddPhoneMethod; label: string; hint: string }[] = [
+    {
+      value: 'app',
+      label: UI_MESSAGES.PHONE.ADD_METHOD_APP,
+      hint: UI_MESSAGES.PHONE.ADD_METHOD_APP_HINT,
+    },
+    {
+      value: 'new',
+      label: UI_MESSAGES.PHONE.ADD_METHOD_NEW,
+      hint: UI_MESSAGES.PHONE.ADD_METHOD_NEW_HINT,
+    },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={(next) => (busy || next ? null : onClose())}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{UI_MESSAGES.PHONE.ADD_TITLE}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div role="radiogroup" className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {methodOptions.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                role="radio"
+                aria-checked={method === opt.value}
+                onClick={() => selectMethod(opt.value)}
+                disabled={busy}
+                className={cn(
+                  'rounded-md border p-3 text-left transition-colors disabled:opacity-60',
+                  method === opt.value
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                    : 'hover:bg-muted/50',
+                )}
+              >
+                <span className="block text-sm font-medium">{opt.label}</span>
+                <span className="block text-xs text-muted-foreground">{opt.hint}</span>
+              </button>
+            ))}
+          </div>
+
+          {method === 'app' ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">{UI_MESSAGES.PHONE.ADD_APP_DESCRIPTION}</p>
+              {wabaId ? (
+                <p className="rounded-md border bg-muted/50 p-2 text-xs">
+                  {UI_MESSAGES.PHONE.ADD_APP_WABA_HINT}{' '}
+                  <span className="font-mono font-medium">{wabaId}</span>
+                </p>
+              ) : null}
+              <MetaEmbeddedSignupButton
+                onSuccess={handleEmbeddedSuccess}
+                disabled={busy}
+                label={busy ? UI_MESSAGES.PHONE.ADD_APP_PROCESSING : UI_MESSAGES.PHONE.ADD_APP_BUTTON}
+              />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">{UI_MESSAGES.PHONE.ADD_DESCRIPTION}</p>
+              <div className="grid grid-cols-[96px_1fr] gap-3">
+                <div>
+                  <label className="mb-1 block text-xs text-muted-foreground">
+                    {UI_MESSAGES.PHONE.CC_LABEL}
+                  </label>
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      +
+                    </span>
+                    <Input
+                      value={cc}
+                      onChange={(e) => setCc(digitsOnly(e.target.value))}
+                      placeholder={UI_MESSAGES.PHONE.CC_PLACEHOLDER}
+                      inputMode="numeric"
+                      maxLength={4}
+                      disabled={busy}
+                      className="pl-6"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-muted-foreground">
+                    {UI_MESSAGES.PHONE.NUMBER_LABEL}
+                  </label>
+                  <Input
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(digitsOnly(e.target.value))}
+                    placeholder={UI_MESSAGES.PHONE.NUMBER_PLACEHOLDER}
+                    inputMode="tel"
+                    maxLength={15}
+                    disabled={busy}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs text-muted-foreground">
+                  {UI_MESSAGES.PHONE.DISPLAY_NAME_LABEL}
+                </label>
+                <Input
+                  value={verifiedName}
+                  onChange={(e) => setVerifiedName(e.target.value)}
+                  maxLength={200}
+                  disabled={busy}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {UI_MESSAGES.PHONE.DISPLAY_NAME_HINT}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={busy}>
+            {UI_MESSAGES.COMMON.CANCEL}
+          </Button>
+          {method === 'new' ? (
+            <Button onClick={handleAdd} disabled={busy || !cc || !phoneNumber}>
+              {busy ? UI_MESSAGES.PHONE.ADDING : UI_MESSAGES.PHONE.ADD_SUBMIT}
+            </Button>
+          ) : null}
         </DialogFooter>
       </DialogContent>
     </Dialog>

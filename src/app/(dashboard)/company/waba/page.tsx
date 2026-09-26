@@ -15,6 +15,9 @@ export default function WabaPage() {
       syncWaba: () => companyApi.syncWaba(),
       listTemplates: (params) => templateApi.list(params),
       listMessages: (params) => companyApi.listMessages(params),
+      addPhoneNumber: (payload) => companyApi.addPhoneNumber(payload),
+      addPhoneEmbedded: (payload) => companyApi.addPhoneEmbedded(payload),
+      setDefaultPhone: (phoneId) => companyApi.setDefaultPhone(phoneId),
       requestPhoneCode: (phoneId, codeMethod) =>
         companyApi.requestPhoneCode(phoneId, { code_method: codeMethod }),
       verifyPhoneCode: (phoneId, code) => companyApi.verifyPhoneCode(phoneId, code),
