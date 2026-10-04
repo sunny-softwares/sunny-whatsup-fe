@@ -1,9 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { FileText, Plus, Trash2 } from 'lucide-react';
+import { Copy, FileText, Plus, Trash2 } from 'lucide-react';
 import {
   DEFAULT_TEMPLATE_LANGUAGE,
+  isAutofillOtpType,
   TEMPLATE_BUTTON_TYPE,
   TEMPLATE_CATEGORY,
   TEMPLATE_CATEGORY_LABEL,
@@ -525,7 +526,8 @@ export function TemplateForm({
                     {authFooterText(authSettings.code_expiration_minutes)}
                   </div>
                 ) : null}
-                <div className="mt-3 rounded border border-emerald-200 bg-background px-3 py-1.5 text-center text-xs text-primary">
+                <div className="mt-3 flex items-center justify-center gap-1.5 rounded border border-emerald-200 bg-background px-3 py-1.5 text-xs text-primary">
+                  {isAutofillOtpType(auth.otpType) ? null : <Copy className="h-3 w-3" />}
                   {otpButtonLabel(auth.otpType, auth.copyCodeText, auth.autofillText)}
                 </div>
               </div>

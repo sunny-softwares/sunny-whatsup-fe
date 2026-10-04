@@ -1,3 +1,4 @@
+import { Copy } from 'lucide-react';
 import type { MessageTemplate, TemplateComponent } from '@/types';
 import { TEMPLATE_CATEGORY, TEMPLATE_HEADER_FORMAT } from '@/constants';
 import {
@@ -5,6 +6,7 @@ import {
   authFooterText,
   isOtpButton,
   otpButtonComponentLabel,
+  showsCopyIcon,
 } from '@/lib/authTemplate';
 
 const findComponent = (components: TemplateComponent[], type: TemplateComponent['type']) =>
@@ -44,8 +46,9 @@ export function TemplatePreview({ template }: { template: MessageTemplate }) {
           {buttons.buttons.map((b, i) => (
             <div
               key={`${b.text}-${i}`}
-              className="rounded border border-emerald-200 bg-background px-3 py-1.5 text-center text-xs text-primary"
+              className="flex items-center justify-center gap-1.5 rounded border border-emerald-200 bg-background px-3 py-1.5 text-xs text-primary"
             >
+              {isAuthentication && showsCopyIcon(b) ? <Copy className="h-3 w-3" /> : null}
               {isOtpButton(b) ? otpButtonComponentLabel(b) : b.text}
             </div>
           ))}

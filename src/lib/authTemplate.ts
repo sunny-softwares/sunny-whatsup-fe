@@ -35,3 +35,8 @@ export const isOtpButton = (
 
 export const otpButtonComponentLabel = (button: TemplateOtpButtonComponent) =>
   otpButtonLabel(button.otp_type ?? TEMPLATE_OTP_TYPE.COPY_CODE, button.text, button.autofill_text);
+
+// WhatsApp draws a copy icon on the copy-code button itself (it can't be part
+// of the label), so previews add it for every authentication button except autofill.
+export const showsCopyIcon = (button: NonNullable<TemplateComponent['buttons']>[number]) =>
+  !(isOtpButton(button) && isAutofillOtpType(button.otp_type ?? TEMPLATE_OTP_TYPE.COPY_CODE));
