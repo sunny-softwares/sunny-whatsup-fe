@@ -38,7 +38,10 @@ const buildVariablePlaceholders = (template: MessageTemplate) => {
     }
   }
 
-  if (spec?.body && spec.body.count > 0) {
+  // Authentication templates take just the code; the API reuses it for the OTP button.
+  if (spec?.otp) {
+    variables.body = [CURL_PLACEHOLDERS.OTP_CODE];
+  } else if (spec?.body && spec.body.count > 0) {
     variables.body = Array.from({ length: spec.body.count }, (_, i) =>
       CURL_PLACEHOLDERS.BODY_TEXT(i + 1),
     );

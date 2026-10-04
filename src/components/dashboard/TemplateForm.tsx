@@ -21,6 +21,7 @@ import {
 } from '@/constants';
 import { pickErrorMessage } from '@/lib/utils';
 import { mediaApi } from '@/lib/api/media.api';
+import { authBodyText, authFooterText, otpButtonLabel } from '@/lib/authTemplate';
 import type {
   CreateTemplateInput,
   TemplateButtonComponent,
@@ -32,6 +33,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { MediaUpload } from '@/components/dashboard/MediaUpload';
+import {
+  AuthenticationTemplateFields,
+  DEFAULT_AUTH_TEMPLATE_FORM,
+  toAuthenticationSettings,
+  validateAuthTemplateForm,
+  type AuthTemplateFormState,
+} from '@/components/dashboard/AuthenticationTemplateFields';
 
 const PLACEHOLDER_RE = /{{\s*(\d+)\s*}}/g;
 
@@ -92,6 +100,12 @@ export function TemplateForm({
 
   const [buttons, setButtons] = useState<TemplateButtonComponent[]>([]);
 
+  // Authentication templates swap the free-form sections for Meta's OTP settings.
+  const [auth, setAuth] = useState<AuthTemplateFormState>(DEFAULT_AUTH_TEMPLATE_FORM);
+  const isAuthentication = category === TEMPLATE_CATEGORY.AUTHENTICATION;
+  const updateAuth = (patch: Partial<AuthTemplateFormState>) => setAuth((prev) => ({ ...prev, ...patch }));
+  const authSettings = useMemo(() => toAuthenticationSettings(auth), [auth]);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -147,6 +161,16 @@ export function TemplateForm({
     setError(null);
     setSubmitting(true);
     try {
+      if (isAuthentication) {
+        const problem = validateAuthTemplateForm(auth);
+        if (problem) {
+          setError(problem);
+          return;
+        }
+        await onSubmit({ name, language, category, authentication: authSettings });
+        return;
+      }
+
       const payload: CreateTemplateInput = {
         name,
         language,
@@ -254,217 +278,223 @@ export function TemplateForm({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Header (optional)</CardTitle>
-            <CardDescription>
-              A text line shown above the body, or a PDF / image attachment.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={includeHeader}
-                onChange={(e) => setIncludeHeader(e.target.checked)}
-              />
-              Include a header
-            </label>
-            {includeHeader ? (
-              <>
-                <div className="space-y-2">
-                  <Label>Header type</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {SUPPORTED_HEADER_FORMATS.map((fmt) => (
-                      <button
-                        key={fmt}
-                        type="button"
-                        onClick={() => changeHeaderFormat(fmt)}
-                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                          headerFormat === fmt
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-input bg-background text-muted-foreground hover:bg-muted'
-                        }`}
-                      >
-                        {TEMPLATE_HEADER_FORMAT_LABEL[fmt]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {headerFormat === TEMPLATE_HEADER_FORMAT.TEXT ? (
+        {isAuthentication ? (
+          <AuthenticationTemplateFields value={auth} onChange={updateAuth} />
+        ) : (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Header (optional)</CardTitle>
+                <CardDescription>
+                  A text line shown above the body, or a PDF / image attachment.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={includeHeader}
+                    onChange={(e) => setIncludeHeader(e.target.checked)}
+                  />
+                  Include a header
+                </label>
+                {includeHeader ? (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="header_text">Header text</Label>
-                      <Input
-                        id="header_text"
-                        maxLength={60}
-                        value={headerText}
-                        onChange={(e) => setHeaderText(e.target.value)}
-                        placeholder="e.g. Hello {{1}}"
-                      />
-                    </div>
-                    {headerPlaceholders > 0 ? (
-                      <div className="space-y-2">
-                        <Label>Header examples</Label>
-                        {headerExamplesSized.map((ex, i) => (
-                          <Input
-                            key={i}
-                            placeholder={`Example value for {{${i + 1}}}`}
-                            value={ex}
-                            onChange={(e) =>
-                              updateExampleArray(setHeaderExamples, headerExamplesSized, i, e.target.value)
-                            }
-                          />
+                      <Label>Header type</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {SUPPORTED_HEADER_FORMATS.map((fmt) => (
+                          <button
+                            key={fmt}
+                            type="button"
+                            onClick={() => changeHeaderFormat(fmt)}
+                            className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                              headerFormat === fmt
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : 'border-input bg-background text-muted-foreground hover:bg-muted'
+                            }`}
+                          >
+                            {TEMPLATE_HEADER_FORMAT_LABEL[fmt]}
+                          </button>
                         ))}
                       </div>
+                    </div>
+
+                    {headerFormat === TEMPLATE_HEADER_FORMAT.TEXT ? (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="header_text">Header text</Label>
+                          <Input
+                            id="header_text"
+                            maxLength={60}
+                            value={headerText}
+                            onChange={(e) => setHeaderText(e.target.value)}
+                            placeholder="e.g. Hello {{1}}"
+                          />
+                        </div>
+                        {headerPlaceholders > 0 ? (
+                          <div className="space-y-2">
+                            <Label>Header examples</Label>
+                            {headerExamplesSized.map((ex, i) => (
+                              <Input
+                                key={i}
+                                placeholder={`Example value for {{${i + 1}}}`}
+                                value={ex}
+                                onChange={(e) =>
+                                  updateExampleArray(setHeaderExamples, headerExamplesSized, i, e.target.value)
+                                }
+                              />
+                            ))}
+                          </div>
+                        ) : null}
+                    </>
+                    ) : isUploadableHeaderFormat(headerFormat) ? (
+                      <div className="space-y-2">
+                        <Label>
+                          {headerFormat === TEMPLATE_HEADER_FORMAT.IMAGE
+                            ? 'Sample image'
+                            : 'Sample document'}
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Meta reviews templates with a sample file. When sending, each message
+                          attaches its own file.
+                        </p>
+                        <MediaUpload<TemplateMediaUploadResult>
+                          format={headerFormat}
+                          fileName={headerFileName}
+                          upload={uploadMedia}
+                          onChange={(next) => {
+                            setHeaderHandle(next?.result.header_handle ?? null);
+                            setHeaderFileName(next?.fileName ?? null);
+                            setHeaderPreviewUrl(next?.previewUrl ?? null);
+                          }}
+                        />
+                      </div>
                     ) : null}
-                  </>
-                ) : isUploadableHeaderFormat(headerFormat) ? (
+                </>
+                ) : null}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Body</CardTitle>
+                <CardDescription>
+                  Use {'{{1}}, {{2}}'} for variables. Provide one example per variable so Meta can review.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="body_text">Body text</Label>
+                  <Textarea
+                    id="body_text"
+                    required
+                    maxLength={1024}
+                    value={bodyText}
+                    onChange={(e) => setBodyText(e.target.value)}
+                    placeholder={'Hello {{1}}, your order {{2}} has shipped.'}
+                    className="min-h-[120px]"
+                  />
+                </div>
+                {bodyPlaceholders > 0 ? (
                   <div className="space-y-2">
-                    <Label>
-                      {headerFormat === TEMPLATE_HEADER_FORMAT.IMAGE
-                        ? 'Sample image'
-                        : 'Sample document'}
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      Meta reviews templates with a sample file. When sending, each message
-                      attaches its own file.
-                    </p>
-                    <MediaUpload<TemplateMediaUploadResult>
-                      format={headerFormat}
-                      fileName={headerFileName}
-                      upload={uploadMedia}
-                      onChange={(next) => {
-                        setHeaderHandle(next?.result.header_handle ?? null);
-                        setHeaderFileName(next?.fileName ?? null);
-                        setHeaderPreviewUrl(next?.previewUrl ?? null);
-                      }}
-                    />
+                    <Label>Body examples</Label>
+                    {bodyExamplesSized.map((ex, i) => (
+                      <Input
+                        key={i}
+                        placeholder={`Example value for {{${i + 1}}}`}
+                        value={ex}
+                        onChange={(e) => updateExampleArray(setBodyExamples, bodyExamplesSized, i, e.target.value)}
+                      />
+                    ))}
                   </div>
                 ) : null}
-              </>
-            ) : null}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Body</CardTitle>
-            <CardDescription>
-              Use {'{{1}}, {{2}}'} for variables. Provide one example per variable so Meta can review.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-2">
-              <Label htmlFor="body_text">Body text</Label>
-              <Textarea
-                id="body_text"
-                required
-                maxLength={1024}
-                value={bodyText}
-                onChange={(e) => setBodyText(e.target.value)}
-                placeholder={'Hello {{1}}, your order {{2}} has shipped.'}
-                className="min-h-[120px]"
-              />
-            </div>
-            {bodyPlaceholders > 0 ? (
-              <div className="space-y-2">
-                <Label>Body examples</Label>
-                {bodyExamplesSized.map((ex, i) => (
-                  <Input
-                    key={i}
-                    placeholder={`Example value for {{${i + 1}}}`}
-                    value={ex}
-                    onChange={(e) => updateExampleArray(setBodyExamples, bodyExamplesSized, i, e.target.value)}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Footer (optional)</CardTitle>
+                <CardDescription>A short subtitle shown below the body.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={includeFooter}
+                    onChange={(e) => setIncludeFooter(e.target.checked)}
                   />
-                ))}
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
+                  Include a footer
+                </label>
+                {includeFooter ? (
+                  <Input
+                    maxLength={60}
+                    value={footerText}
+                    onChange={(e) => setFooterText(e.target.value)}
+                    placeholder="e.g. Powered by Sunny WhatsUp"
+                  />
+                ) : null}
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Footer (optional)</CardTitle>
-            <CardDescription>A short subtitle shown below the body.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={includeFooter}
-                onChange={(e) => setIncludeFooter(e.target.checked)}
-              />
-              Include a footer
-            </label>
-            {includeFooter ? (
-              <Input
-                maxLength={60}
-                value={footerText}
-                onChange={(e) => setFooterText(e.target.value)}
-                placeholder="e.g. Powered by Sunny WhatsUp"
-              />
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Buttons (optional)</CardTitle>
-            <CardDescription>Up to 3 quick reply or URL buttons.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => addButton(TEMPLATE_BUTTON_TYPE.QUICK_REPLY)}
-                disabled={buttons.length >= 3}
-              >
-                <Plus className="mr-2 h-3 w-3" /> Quick reply
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => addButton(TEMPLATE_BUTTON_TYPE.URL)}
-                disabled={buttons.length >= 3}
-              >
-                <Plus className="mr-2 h-3 w-3" /> URL
-              </Button>
-            </div>
-
-            {buttons.map((btn, i) => (
-              <div key={i} className="rounded-md border p-3">
-                <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>
-                    Button {i + 1} · {btn.type}
-                  </span>
-                  <Button type="button" size="sm" variant="ghost" onClick={() => removeButton(i)}>
-                    <Trash2 className="h-3 w-3" />
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Buttons (optional)</CardTitle>
+                <CardDescription>Up to 3 quick reply or URL buttons.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addButton(TEMPLATE_BUTTON_TYPE.QUICK_REPLY)}
+                    disabled={buttons.length >= 3}
+                  >
+                    <Plus className="mr-2 h-3 w-3" /> Quick reply
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addButton(TEMPLATE_BUTTON_TYPE.URL)}
+                    disabled={buttons.length >= 3}
+                  >
+                    <Plus className="mr-2 h-3 w-3" /> URL
                   </Button>
                 </div>
-                <div className="space-y-2">
-                  <Input
-                    placeholder="Button label"
-                    maxLength={25}
-                    value={btn.text}
-                    onChange={(e) => updateButton(i, { text: e.target.value })}
-                  />
-                  {btn.type === TEMPLATE_BUTTON_TYPE.URL ? (
-                    <Input
-                      placeholder="https://example.com or with {{1}}"
-                      value={btn.url ?? ''}
-                      onChange={(e) => updateButton(i, { url: e.target.value })}
-                    />
-                  ) : null}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+
+                {buttons.map((btn, i) => (
+                  <div key={i} className="rounded-md border p-3">
+                    <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+                      <span>
+                        Button {i + 1} · {btn.type}
+                      </span>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => removeButton(i)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Button label"
+                        maxLength={25}
+                        value={btn.text}
+                        onChange={(e) => updateButton(i, { text: e.target.value })}
+                      />
+                      {btn.type === TEMPLATE_BUTTON_TYPE.URL ? (
+                        <Input
+                          placeholder="https://example.com or with {{1}}"
+                          value={btn.url ?? ''}
+                          onChange={(e) => updateButton(i, { url: e.target.value })}
+                        />
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </>
+        )}
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
@@ -485,43 +515,59 @@ export function TemplateForm({
             <CardDescription>How the message will look in WhatsApp.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="rounded-lg border bg-emerald-50 p-3 text-sm">
-              {includeHeader && headerFormat === TEMPLATE_HEADER_FORMAT.IMAGE && headerPreviewUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={headerPreviewUrl}
-                  alt={headerFileName ?? 'Header image'}
-                  className="mb-2 max-h-40 w-full rounded border border-emerald-200 object-cover"
-                />
-              ) : null}
-              {includeHeader && headerFormat === TEMPLATE_HEADER_FORMAT.DOCUMENT && headerFileName ? (
-                <div className="mb-2 flex items-center gap-2 rounded border border-emerald-200 bg-background px-2 py-1.5 text-xs">
-                  <FileText className="h-4 w-4 text-primary" />
-                  <span className="truncate">{headerFileName}</span>
+            {isAuthentication ? (
+              <div className="rounded-lg border bg-emerald-50 p-3 text-sm">
+                <div className="whitespace-pre-wrap text-foreground">
+                  {authBodyText(authSettings.add_security_recommendation)}
                 </div>
-              ) : null}
-              {includeHeader && headerFormat === TEMPLATE_HEADER_FORMAT.TEXT && headerText ? (
-                <div className="mb-2 font-semibold">{headerText}</div>
-              ) : null}
-              <div className="whitespace-pre-wrap text-foreground">
-                {bodyText || <span className="text-muted-foreground">Body text…</span>}
+                {authFooterText(authSettings.code_expiration_minutes) ? (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {authFooterText(authSettings.code_expiration_minutes)}
+                  </div>
+                ) : null}
+                <div className="mt-3 rounded border border-emerald-200 bg-background px-3 py-1.5 text-center text-xs text-primary">
+                  {otpButtonLabel(auth.otpType, auth.copyCodeText, auth.autofillText)}
+                </div>
               </div>
-              {includeFooter && footerText ? (
-                <div className="mt-2 text-xs text-muted-foreground">{footerText}</div>
-              ) : null}
-              {buttons.length > 0 ? (
-                <div className="mt-3 space-y-1.5">
-                  {buttons.map((b, i) => (
-                    <div
-                      key={i}
-                      className="rounded border border-emerald-200 bg-background px-3 py-1.5 text-center text-xs text-primary"
-                    >
-                      {b.text || `Button ${i + 1}`}
-                    </div>
-                  ))}
+            ) : (
+              <div className="rounded-lg border bg-emerald-50 p-3 text-sm">
+                {includeHeader && headerFormat === TEMPLATE_HEADER_FORMAT.IMAGE && headerPreviewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={headerPreviewUrl}
+                    alt={headerFileName ?? 'Header image'}
+                    className="mb-2 max-h-40 w-full rounded border border-emerald-200 object-cover"
+                  />
+                ) : null}
+                {includeHeader && headerFormat === TEMPLATE_HEADER_FORMAT.DOCUMENT && headerFileName ? (
+                  <div className="mb-2 flex items-center gap-2 rounded border border-emerald-200 bg-background px-2 py-1.5 text-xs">
+                    <FileText className="h-4 w-4 text-primary" />
+                    <span className="truncate">{headerFileName}</span>
+                  </div>
+                ) : null}
+                {includeHeader && headerFormat === TEMPLATE_HEADER_FORMAT.TEXT && headerText ? (
+                  <div className="mb-2 font-semibold">{headerText}</div>
+                ) : null}
+                <div className="whitespace-pre-wrap text-foreground">
+                  {bodyText || <span className="text-muted-foreground">Body text…</span>}
                 </div>
-              ) : null}
-            </div>
+                {includeFooter && footerText ? (
+                  <div className="mt-2 text-xs text-muted-foreground">{footerText}</div>
+                ) : null}
+                {buttons.length > 0 ? (
+                  <div className="mt-3 space-y-1.5">
+                    {buttons.map((b, i) => (
+                      <div
+                        key={i}
+                        className="rounded border border-emerald-200 bg-background px-3 py-1.5 text-center text-xs text-primary"
+                      >
+                        {b.text || `Button ${i + 1}`}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

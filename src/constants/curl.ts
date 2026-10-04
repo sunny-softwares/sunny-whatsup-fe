@@ -11,5 +11,6 @@ export const CURL_PLACEHOLDERS = {
   DOCUMENT_PATH: '<C:/path/to/file.pdf>',
   IMAGE_PATH: '<C:/path/to/image.jpg>',
   BODY_TEXT: (index: number) => `<BODY_TEXT_${index}>`,
+  OTP_CODE: '<VERIFICATION_CODE>',
   BUTTON_VALUE: (index: number) => `<BUTTON_URL_SUFFIX_${index}>`,
 } as const;

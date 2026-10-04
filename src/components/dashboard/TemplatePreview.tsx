@@ -1,5 +1,11 @@
 import type { MessageTemplate, TemplateComponent } from '@/types';
-import { TEMPLATE_HEADER_FORMAT } from '@/constants';
+import { TEMPLATE_CATEGORY, TEMPLATE_HEADER_FORMAT } from '@/constants';
+import {
+  authBodyText,
+  authFooterText,
+  isOtpButton,
+  otpButtonComponentLabel,
+} from '@/lib/authTemplate';
 
 const findComponent = (components: TemplateComponent[], type: TemplateComponent['type']) =>
   components.find((c) => c.type === type);
@@ -10,6 +16,14 @@ export function TemplatePreview({ template }: { template: MessageTemplate }) {
   const footer = findComponent(template.components, 'FOOTER');
   const buttons = findComponent(template.components, 'BUTTONS');
 
+  // An authentication template we created stores only its settings until a
+  // sync brings back Meta's generated text, so render that text from them.
+  const isAuthentication = template.category === TEMPLATE_CATEGORY.AUTHENTICATION;
+  const bodyText =
+    body?.text ||
+    (isAuthentication ? authBodyText(body?.add_security_recommendation !== false) : null);
+  const footerText = footer?.text || authFooterText(footer?.code_expiration_minutes);
+
   return (
     <div className="rounded-lg border bg-emerald-50 p-3 text-sm">
       {header ? (
@@ -19,11 +33,11 @@ export function TemplatePreview({ template }: { template: MessageTemplate }) {
             : `[${header.format} header]`}
         </div>
       ) : null}
-      {body?.text ? (
-        <div className="whitespace-pre-wrap text-foreground">{body.text}</div>
+      {bodyText ? (
+        <div className="whitespace-pre-wrap text-foreground">{bodyText}</div>
       ) : null}
-      {footer?.text ? (
-        <div className="mt-2 text-xs text-muted-foreground">{footer.text}</div>
+      {footerText ? (
+        <div className="mt-2 text-xs text-muted-foreground">{footerText}</div>
       ) : null}
       {buttons?.buttons && buttons.buttons.length > 0 ? (
         <div className="mt-3 space-y-1.5">
@@ -32,7 +46,7 @@ export function TemplatePreview({ template }: { template: MessageTemplate }) {
               key={`${b.text}-${i}`}
               className="rounded border border-emerald-200 bg-background px-3 py-1.5 text-center text-xs text-primary"
             >
-              {b.text}
+              {isOtpButton(b) ? otpButtonComponentLabel(b) : b.text}
             </div>
           ))}
         </div>

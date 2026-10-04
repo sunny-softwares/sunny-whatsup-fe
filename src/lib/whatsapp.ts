@@ -1,4 +1,5 @@
 import { EXTERNAL_LINKS, TEMPLATE_HEADER_FORMAT } from '@/constants';
+import { authBodyText } from '@/lib/authTemplate';
 import { parameterTexts } from '@/lib/messagePayload';
 import type { MessageLog } from '@/types';
 
@@ -20,9 +21,16 @@ export function buildMessageText(log: MessageLog): string {
     parts.push(substituteVars(header.text, parameterTexts(log, 'header')));
   }
 
+  // An authentication BODY created here carries no text until synced from
+  // Meta (only its add_security_recommendation flag), so rebuild Meta's text.
   const body = components.find((c) => c.type === 'BODY');
-  if (body?.text) {
-    parts.push(substituteVars(body.text, parameterTexts(log, 'body')));
+  const bodyText =
+    body?.text ??
+    (body?.add_security_recommendation !== undefined
+      ? authBodyText(body.add_security_recommendation)
+      : null);
+  if (bodyText) {
+    parts.push(substituteVars(bodyText, parameterTexts(log, 'body')));
   }
 
   return parts.join('\n\n');

@@ -16,6 +16,14 @@ export const EXTERNAL_LINKS = {
   META_ERROR_CODES_DOCS:
     'https://developers.facebook.com/documentation/business-messaging/whatsapp/support/error-codes',
 
+  // Terms a business accepts before using zero-tap authentication templates.
+  WHATSAPP_BUSINESS_TERMS: 'https://www.whatsapp.com/legal/business-terms',
+
+  // Meta's guide to authentication templates, including how to get an
+  // Android app's package name and signature hash for one-tap / zero-tap.
+  META_AUTH_TEMPLATES_DOCS:
+    'https://developers.facebook.com/documentation/business-messaging/whatsapp/templates/authentication-templates/autofill-button-authentication-templates',
+
   /**
    * WhatsApp Web chat composer for one recipient, optionally prefilled with
    * text. WhatsApp's click-to-chat URL only supports prefilling text — media

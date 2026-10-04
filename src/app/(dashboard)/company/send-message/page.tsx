@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Send } from 'lucide-react';
 import {
+  AUTH_TEMPLATE_LIMITS,
   ROUTES,
   TEMPLATE_CATEGORY_LABEL,
   TEMPLATE_CATEGORY_VALUES,
@@ -17,6 +18,7 @@ import { companyApi } from '@/lib/api/company.api';
 import { templateApi } from '@/lib/api/template.api';
 import { mediaApi } from '@/lib/api/media.api';
 import { pickErrorMessage } from '@/lib/utils';
+import { authBodyText } from '@/lib/authTemplate';
 import type {
   MessageHeaderVariable,
   MessageMediaUploadResult,
@@ -310,7 +312,23 @@ export default function SendMessagePage() {
               </div>
             ) : null}
 
-            {template && template.variables.body.count > 0 ? (
+            {template && template.variables.otp ? (
+              <div className="space-y-2">
+                <Label htmlFor="otp_code">Verification code</Label>
+                <Input
+                  id="otp_code"
+                  placeholder="e.g. 123456"
+                  maxLength={AUTH_TEMPLATE_LIMITS.OTP_CODE_MAX}
+                  value={bodyVars[0] ?? ''}
+                  onChange={(e) => setBodyVars([e.target.value])}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Up to {AUTH_TEMPLATE_LIMITS.OTP_CODE_MAX} characters. It fills both the message
+                  and the code button.
+                </p>
+              </div>
+            ) : template && template.variables.body.count > 0 ? (
               <div className="space-y-2">
                 <Label>Body variables</Label>
                 {bodyVars.map((v, i) => (
@@ -397,7 +415,11 @@ function withVariablesSubstituted(
         return { ...c, text: substitute(c.text, values.header) };
       }
       if (c.type === 'BODY') {
-        return { ...c, text: substitute(c.text, values.body) };
+        // An unsynced authentication body has no text yet; preview Meta's preset.
+        const text =
+          c.text ??
+          (template.variables.otp ? authBodyText(c.add_security_recommendation !== false) : undefined);
+        return { ...c, text: substitute(text, values.body) };
       }
       return c;
     }),

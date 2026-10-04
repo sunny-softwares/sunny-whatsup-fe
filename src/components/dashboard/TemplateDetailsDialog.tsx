@@ -1,6 +1,6 @@
 'use client';
 
-import { TEMPLATE_CATEGORY_LABEL, UI_MESSAGES } from '@/constants';
+import { TEMPLATE_CATEGORY_LABEL, TEMPLATE_OTP_TYPE_LABEL, UI_MESSAGES } from '@/constants';
 import { formatDate } from '@/lib/utils';
 import type { MessageTemplate } from '@/types';
 import {
@@ -61,9 +61,15 @@ export function TemplateDetailsDialog({ template, onClose }: TemplateDetailsDial
                 <Field label={UI_MESSAGES.TEMPLATE.LANGUAGE} value={template.language} />
                 <Field label={UI_MESSAGES.TEMPLATE.CREATED} value={formatDate(template.created_at)} />
                 <Field label={UI_MESSAGES.TEMPLATE.SYNCED} value={formatDate(template.last_synced_at)} />
+                {template.variables.otp ? (
+                  <Field
+                    label={UI_MESSAGES.TEMPLATE.CODE_DELIVERY}
+                    value={TEMPLATE_OTP_TYPE_LABEL[template.variables.otp.otp_type] ?? template.variables.otp.otp_type}
+                  />
+                ) : null}
                 <Field
                   label={UI_MESSAGES.TEMPLATE.VARIABLES}
-                  value={`body ${template.variables.body.count}${
+                  value={template.variables.otp ? UI_MESSAGES.TEMPLATE.VERIFICATION_CODE_VARIABLE : `body ${template.variables.body.count}${
                     template.variables.header ? ` · header ${template.variables.header.count}` : ''
                   }${
                     template.variables.buttons.length

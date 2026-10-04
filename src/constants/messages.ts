@@ -247,6 +247,8 @@ export const UI_MESSAGES = {
     SYNCED: 'Last synced',
     META_ID: 'Meta template ID',
     VARIABLES: 'Variables',
+    CODE_DELIVERY: 'Code delivery',
+    VERIFICATION_CODE_VARIABLE: 'verification code',
     REJECTION_REASON: 'Rejection reason',
     PREVIEW: 'Preview',
     SYNC: 'Sync from Meta',
