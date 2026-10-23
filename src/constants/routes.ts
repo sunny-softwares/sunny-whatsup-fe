@@ -46,6 +46,17 @@ export const API_ROUTES = {
   },
   SUPER_ADMIN: {
     STATS: '/super-admin/stats',
+    // Analytics — a date window plus filters, as opposed to STATS, which is the
+    // fixed platform snapshot.
+    ANALYTICS_FILTERS: '/super-admin/analytics/filters',
+    ANALYTICS_OVERVIEW: '/super-admin/analytics/overview',
+    ANALYTICS_TIMESERIES: '/super-admin/analytics/timeseries',
+    ANALYTICS_AVERAGES: '/super-admin/analytics/averages',
+    ANALYTICS_COMPANIES: '/super-admin/analytics/companies',
+    ANALYTICS_BREAKDOWN: '/super-admin/analytics/breakdown',
+    ANALYTICS_GROWTH: '/super-admin/analytics/growth',
+    ANALYTICS_FAILURES: '/super-admin/analytics/failures',
+    ANALYTICS_REVENUE: '/super-admin/analytics/revenue',
     COMPANIES: '/super-admin/companies',
     COMPANY: (id: string) => `/super-admin/companies/${id}`,
     APPROVE: (id: string) => `/super-admin/companies/${id}/approve`,

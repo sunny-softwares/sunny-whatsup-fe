@@ -17,3 +17,4 @@ export * from './subscription';
 export * from './paymentLink';
 export * from './links';
 export * from './retention';
+export * from './analytics';

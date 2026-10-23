@@ -6,6 +6,7 @@ import type { SubscriptionNotice } from './subscription';
 export * from './template';
 export * from './subscription';
 export * from './paymentLink';
+export * from './analytics';
 
 export interface AuthUser {
   id: string;
