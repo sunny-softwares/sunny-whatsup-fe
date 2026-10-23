@@ -590,6 +590,7 @@ export const UI_MESSAGES = {
 
     SHOWING: 'Showing',
     PICK_DATES: 'Choose both a start and an end date to see this period.',
+    UPDATING: 'updating…',
     ELAPSED_OF: (elapsed: number, days: number) => `${elapsed} of ${days} days elapsed`,
     CLEAR_FILTERS: (count: number) => `Clear ${count} filter${count === 1 ? '' : 's'}`,
     COMPARED_TO: (label: string) => `vs ${label}`,

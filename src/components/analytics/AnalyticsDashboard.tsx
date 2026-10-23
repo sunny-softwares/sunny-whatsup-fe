@@ -164,30 +164,30 @@ export function AnalyticsDashboard() {
     ready && tab === ANALYTICS_TAB.REVENUE,
   );
 
-  // Whichever panel is open supplies the resolved window the filter bar echoes
-  // back, so the dates shown are always the ones that produced what is on
-  // screen rather than a client-side guess at them.
-  const resolvedRange: AnalyticsRange | null =
-    overview.data?.range ??
-    timeseries.data?.range ??
-    averages.data?.range ??
-    companies.data?.meta?.range ??
-    breakdown.data?.range ??
-    growth.data?.range ??
-    failures.data?.range ??
-    revenue.data?.range ??
-    null;
+  /**
+   * Each panel paired with the window the server resolved for it.
+   *
+   * Pairing them matters: a panel keeps its previous data while its tab is
+   * closed, so reading the window from "whichever panel happens to have data"
+   * would echo back whatever the FIRST-loaded panel was asked months ago,
+   * however long the filter bar has said otherwise.
+   */
+  const panels = {
+    [ANALYTICS_TAB.OVERVIEW]: { resource: overview, range: overview.data?.range },
+    [ANALYTICS_TAB.TRENDS]: { resource: timeseries, range: timeseries.data?.range },
+    [ANALYTICS_TAB.AVERAGES]: { resource: averages, range: averages.data?.range },
+    [ANALYTICS_TAB.COMPANIES]: { resource: companies, range: companies.data?.meta?.range },
+    [ANALYTICS_TAB.BREAKDOWN]: { resource: breakdown, range: breakdown.data?.range },
+    [ANALYTICS_TAB.GROWTH]: { resource: growth, range: growth.data?.range },
+    [ANALYTICS_TAB.FAILURES]: { resource: failures, range: failures.data?.range },
+    [ANALYTICS_TAB.REVENUE]: { resource: revenue, range: revenue.data?.range },
+  };
 
-  const active = {
-    [ANALYTICS_TAB.OVERVIEW]: overview,
-    [ANALYTICS_TAB.TRENDS]: timeseries,
-    [ANALYTICS_TAB.AVERAGES]: averages,
-    [ANALYTICS_TAB.COMPANIES]: companies,
-    [ANALYTICS_TAB.BREAKDOWN]: breakdown,
-    [ANALYTICS_TAB.GROWTH]: growth,
-    [ANALYTICS_TAB.FAILURES]: failures,
-    [ANALYTICS_TAB.REVENUE]: revenue,
-  }[tab];
+  const active = panels[tab].resource;
+
+  // Only ever the open panel's own window, so what the filter bar reports is
+  // what produced what is on screen.
+  const resolvedRange: AnalyticsRange | null = panels[tab].range ?? null;
 
   const renderPanel = () => {
     if (!ready) {
@@ -265,6 +265,10 @@ export function AnalyticsDashboard() {
         onChange={handleFilterChange}
         options={options}
         resolvedRange={resolvedRange}
+        // While a new window is loading the old one is still on screen, and
+        // left unmarked it would silently contradict the Period selector just
+        // above it.
+        rangeStale={active.stale}
       />
 
       <Tabs options={ANALYTICS_TABS} value={tab} onChange={setTab} />

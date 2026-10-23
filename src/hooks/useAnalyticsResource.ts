@@ -8,6 +8,22 @@ interface AnalyticsResource<T> {
   data: T | null;
   loading: boolean;
   error: string | null;
+  /**
+   * `data` was loaded for a different `key` than the one now in force.
+   *
+   * Callers need this to avoid presenting an old answer as the current one:
+   * the previous data is deliberately kept on screen while a new request runs,
+   * which is right for a chart but wrong for anything that states what the
+   * request WAS — a window, a filter summary, a row count.
+   */
+  stale: boolean;
+}
+
+interface ResourceState<T> {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+  loadedKey: string | null;
 }
 
 /**
@@ -32,10 +48,11 @@ export function useAnalyticsResource<T>(
   key: string,
   enabled = true,
 ): AnalyticsResource<T> {
-  const [state, setState] = useState<AnalyticsResource<T>>({
+  const [state, setState] = useState<ResourceState<T>>({
     data: null,
     loading: enabled,
     error: null,
+    loadedKey: null,
   });
 
   // The fetcher closes over the current filters and is therefore a new function
@@ -56,7 +73,9 @@ export function useAnalyticsResource<T>(
       .current()
       .then((data) => {
         if (runIdRef.current !== runId) return;
-        setState({ data, loading: false, error: null });
+        // Stamped with the key it answers, so a caller can tell this apart from
+        // data left over from a previous one.
+        setState({ data, loading: false, error: null, loadedKey: key });
       })
       .catch((err) => {
         if (runIdRef.current !== runId) return;
@@ -68,5 +87,10 @@ export function useAnalyticsResource<T>(
       });
   }, [key, enabled]);
 
-  return state;
+  return {
+    data: state.data,
+    loading: state.loading,
+    error: state.error,
+    stale: state.data !== null && state.loadedKey !== key,
+  };
 }

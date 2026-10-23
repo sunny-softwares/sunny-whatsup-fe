@@ -9,6 +9,7 @@ import {
   type MessageStatus,
 } from '@/constants';
 import { formatRangeLabel } from '@/lib/analytics';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -27,6 +28,8 @@ interface AnalyticsFilterBarProps {
   options: AnalyticsFilterOptions | null;
   /** The window the server actually resolved, echoed back for confirmation. */
   resolvedRange?: AnalyticsRange | null;
+  /** That window answers an earlier query and is being replaced. */
+  rangeStale?: boolean;
   disabled?: boolean;
 }
 
@@ -55,6 +58,7 @@ export function AnalyticsFilterBar({
   onChange,
   options,
   resolvedRange,
+  rangeStale = false,
   disabled,
 }: AnalyticsFilterBarProps) {
   const set = <K extends keyof AnalyticsFilterState>(key: K, value: AnalyticsFilterState[K]) =>
@@ -280,8 +284,15 @@ export function AnalyticsFilterBar({
         <div className="flex flex-wrap items-center gap-2 border-t pt-3 text-sm">
           <CalendarRange className="h-4 w-4 shrink-0 text-muted-foreground" />
           <span className="text-muted-foreground">{UI_MESSAGES.ANALYTICS.SHOWING}</span>
-          <span className="font-medium">{formatRangeLabel(resolvedRange)}</span>
-          {resolvedRange ? (
+          {/* Dimmed rather than blanked while the next window loads: the dates
+              stay readable, and nothing shifts as they are replaced. */}
+          <span className={cn('font-medium', rangeStale && 'text-muted-foreground')}>
+            {formatRangeLabel(resolvedRange)}
+          </span>
+          {rangeStale ? (
+            <span className="text-xs text-muted-foreground">{UI_MESSAGES.ANALYTICS.UPDATING}</span>
+          ) : null}
+          {resolvedRange && !rangeStale ? (
             <>
               <Badge variant="muted">{resolvedRange.timezone}</Badge>
               {resolvedRange.granularity_label ? (
