@@ -21,6 +21,7 @@ import {
   Shield,
   ChevronDown,
   ChevronRight,
+  Webhook,
 } from 'lucide-react';
 import {
   COMPANY_FEATURE,
@@ -57,6 +58,7 @@ const COMPANY_NAV: NavItem[] = [
   { label: 'Templates', href: ROUTES.COMPANY.TEMPLATES, icon: FileText, feature: COMPANY_FEATURE.TEMPLATES },
   { label: 'Send Message', href: ROUTES.COMPANY.SEND_MESSAGE, icon: Send, feature: COMPANY_FEATURE.SEND_MESSAGE },
   { label: 'Messages', href: ROUTES.COMPANY.MESSAGES, icon: History, feature: COMPANY_FEATURE.MESSAGES },
+  { label: UI_MESSAGES.WEBHOOKS.NAV_LABEL, href: ROUTES.COMPANY.WEBHOOKS, icon: Webhook, feature: COMPANY_FEATURE.WEBHOOKS },
   { label: UI_MESSAGES.BILLING.NAV_LABEL, href: ROUTES.COMPANY.BILLING, icon: CreditCard, feature: COMPANY_FEATURE.BILLING },
   // Gated like everything else, so the super admin's toggle actually works.
   // Being locked out for non-payment does NOT hide this — the backend keeps
@@ -77,6 +79,7 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Meta WABA', href: ROUTES.ADMIN.WABA, icon: Building2 },
   { label: 'Templates', href: ROUTES.ADMIN.TEMPLATES, icon: FileText },
   { label: 'All Messages', href: ROUTES.ADMIN.MESSAGES, icon: MessageSquare },
+  { label: UI_MESSAGES.WEBHOOKS.NAV_LABEL, href: ROUTES.ADMIN.WEBHOOKS, icon: Webhook },
   { label: UI_MESSAGES.API_TOKEN.NAV_LABEL, href: ROUTES.ADMIN.API_TOKENS, icon: KeyRound },
   { label: UI_MESSAGES.BILLING.NAV_LABEL, href: ROUTES.ADMIN.BILLING, icon: CreditCard },
   { label: UI_MESSAGES.SUBSCRIPTION.ADMIN_TITLE, href: ROUTES.ADMIN.SUBSCRIPTIONS, icon: Receipt },

@@ -26,6 +26,10 @@ export const COMPANY_FEATURE = {
   // and default-deny keeps them invisible until the features ship.
   BULK_MESSAGING: 'bulk_messaging',
   CAMPAIGNS: 'campaigns',
+  // Outbound webhooks: message status updates posted to the company's own
+  // server. Every plan grants it, but each company starts with it switched off
+  // until the super admin enables it here.
+  WEBHOOKS: 'webhooks',
 } as const;
 
 export type CompanyFeatureKey = (typeof COMPANY_FEATURE)[keyof typeof COMPANY_FEATURE];
@@ -77,6 +81,11 @@ export const COMPANY_FEATURE_META: Record<
     label: 'Campaigns',
     description: 'Build, schedule and report on messaging campaigns. Coming soon (Pro plan).',
   },
+  [COMPANY_FEATURE.WEBHOOKS]: {
+    label: 'Webhooks',
+    description:
+      'Send message status updates (sent, delivered, read, failed) to the company’s own server. Off for every company until enabled here.',
+  },
 };
 
 // Route prefix → feature, used by the client-side guard for company admins.
@@ -94,6 +103,7 @@ export const COMPANY_FEATURE_ROUTES: Record<string, CompanyFeatureKey> = {
   [ROUTES.COMPANY.MESSAGES]: COMPANY_FEATURE.MESSAGES,
   [ROUTES.COMPANY.BILLING]: COMPANY_FEATURE.BILLING,
   [ROUTES.COMPANY.SUBSCRIPTION]: COMPANY_FEATURE.SUBSCRIPTION,
+  [ROUTES.COMPANY.WEBHOOKS]: COMPANY_FEATURE.WEBHOOKS,
   [ROUTES.SETTINGS.ROOT]: COMPANY_FEATURE.SETTINGS,
 };
 
@@ -112,6 +122,7 @@ export const COMPANY_FEATURE_HOME_ROUTES: [CompanyFeatureKey, string][] = [
   [COMPANY_FEATURE.TEMPLATES, ROUTES.COMPANY.TEMPLATES],
   [COMPANY_FEATURE.SEND_MESSAGE, ROUTES.COMPANY.SEND_MESSAGE],
   [COMPANY_FEATURE.MESSAGES, ROUTES.COMPANY.MESSAGES],
+  [COMPANY_FEATURE.WEBHOOKS, ROUTES.COMPANY.WEBHOOKS],
   [COMPANY_FEATURE.BILLING, ROUTES.COMPANY.BILLING],
   // Ahead of Settings on purpose: when a subscription is blocking, these are the
   // only two features left enabled, and the subscription page is where the user
