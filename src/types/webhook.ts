@@ -60,13 +60,17 @@ export interface WebhookDeliveryContract {
   retention_days: number;
 }
 
-export interface WebhookOverview {
-  feature_enabled: boolean;
-  endpoint: WebhookEndpoint | null;
+// How webhooks behave, as served by the API (the screens never hardcode it).
+export interface WebhookContract {
   fields: WebhookFieldInfo[];
   signing: WebhookSigningContract;
   verification: { challenge_param: string; timeout_seconds: number };
   delivery: WebhookDeliveryContract;
+}
+
+export interface WebhookOverview extends WebhookContract {
+  feature_enabled: boolean;
+  endpoint: WebhookEndpoint | null;
 }
 
 // `secret` is present only the first time the endpoint is verified.
@@ -129,4 +133,44 @@ export interface WebhookDeliveryListParams {
   search?: string;
   date_from?: string;
   date_to?: string;
+}
+
+// The body of one event we send (id, type, version, time and details).
+export interface WebhookEventBody {
+  id: string;
+  type: WebhookEventType;
+  api_version: string;
+  created_at: string;
+  data: Record<string, unknown>;
+}
+
+export interface WebhookGuideExample {
+  key: string;
+  label: string;
+  language: string;
+  filename: string;
+  requirements: string;
+  run: string;
+  code: string;
+}
+
+// Fixed inputs and the signature they must produce, for testing a signature check.
+export interface WebhookGuideTestVector {
+  secret: string;
+  timestamp: string;
+  body: string;
+  signed_payload: string;
+  signature: string;
+  signature_header: string;
+}
+
+export interface WebhookGuide extends WebhookContract {
+  title: string;
+  payload_version: string;
+  pdf_filename: string;
+  secret_env_var: string;
+  example_url: string;
+  samples: { delivered: WebhookEventBody; failed: WebhookEventBody; test: WebhookEventBody };
+  test_vector: WebhookGuideTestVector;
+  examples: WebhookGuideExample[];
 }

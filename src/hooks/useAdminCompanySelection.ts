@@ -9,6 +9,10 @@ import type { Company } from '@/types';
 
 export const COMPANY_QUERY_KEY = 'companyId';
 
+/** `path` with `?companyId=` added when a company is selected. */
+export const withCompanyQuery = (path: string, companyId: string) =>
+  companyId ? `${path}?${new URLSearchParams({ [COMPANY_QUERY_KEY]: companyId })}` : path;
+
 /**
  * The company a super-admin webhook page acts on, kept in `?companyId=` so the
  * settings page and the delivery log can link to each other for the same
@@ -41,8 +45,7 @@ export function useAdminCompanySelection(basePath: string) {
     router.replace(`${basePath}?${params.toString()}`);
   };
 
-  const withCompany = (path: string) =>
-    companyId ? `${path}?${new URLSearchParams({ [COMPANY_QUERY_KEY]: companyId })}` : path;
+  const withCompany = (path: string) => withCompanyQuery(path, companyId);
 
   return {
     companyId,

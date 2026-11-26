@@ -17,6 +17,7 @@ export const ROUTES = {
     SUBSCRIPTION: '/company/subscription',
     WEBHOOKS: '/company/webhooks',
     WEBHOOK_DELIVERIES: '/company/webhooks/deliveries',
+    WEBHOOK_GUIDE: '/company/webhooks/guide',
   },
   ADMIN: {
     ROOT: '/admin',
@@ -34,6 +35,7 @@ export const ROUTES = {
     PAYMENT_LINKS: '/admin/payment-links',
     WEBHOOKS: '/admin/webhooks',
     WEBHOOK_DELIVERIES: '/admin/webhooks/deliveries',
+    WEBHOOK_GUIDE: '/admin/webhooks/guide',
   },
   SETTINGS: {
     ROOT: '/settings',
@@ -145,6 +147,8 @@ export const API_ROUTES = {
     PAYMENT_LINK_SYNC: (id: string) => `/super-admin/payment-links/${id}/sync`,
     // Outbound webhooks managed on a company's behalf.
     COMPANY_WEBHOOK: (companyId: string) => `/super-admin/companies/${companyId}/webhook`,
+    // The webhook integration guide (the same for every company).
+    WEBHOOK_GUIDE: '/super-admin/webhook/guide',
   },
   COMPANY: {
     ME: '/company/me',
@@ -187,6 +191,7 @@ export const API_ROUTES = {
     SUBSCRIPTION_INTEREST: '/company/subscription/interest',
     // Outbound webhooks — the company's own endpoint (a singular resource).
     WEBHOOK: '/company/webhook',
+    WEBHOOK_GUIDE: '/company/webhook/guide',
   },
 } as const;
 
@@ -202,4 +207,9 @@ export const WEBHOOK_API_PATHS = {
   DELIVERIES: '/deliveries',
   DELIVERY: (id: string) => `/deliveries/${id}`,
   DELIVERY_REDELIVER: (id: string) => `/deliveries/${id}/redeliver`,
+} as const;
+
+// Sub-paths under a webhook guide root (COMPANY.WEBHOOK_GUIDE or SUPER_ADMIN.WEBHOOK_GUIDE).
+export const WEBHOOK_GUIDE_API_PATHS = {
+  PDF: '/pdf',
 } as const;

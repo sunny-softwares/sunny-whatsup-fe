@@ -40,6 +40,7 @@ function AdminWebhooksInner() {
       description={M.ADMIN_SUBTITLE}
       api={api}
       deliveriesHref={withCompany(ROUTES.ADMIN.WEBHOOK_DELIVERIES)}
+      guideHref={withCompany(ROUTES.ADMIN.WEBHOOK_GUIDE)}
       ready={!!companyId}
       notReadyMessage={M.NO_COMPANY_SELECTED}
       reloadKey={companyId}

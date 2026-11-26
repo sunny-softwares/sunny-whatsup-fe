@@ -893,6 +893,47 @@ export const UI_MESSAGES = {
     REDELIVER_PAUSED_HINT: 'Re-enable the webhook to redeliver.',
     REDELIVERY_QUEUED: 'Redelivery queued.',
     CLOSE: 'Close',
+
+    // Integration guide
+    GUIDE_BUTTON: 'Integration guide',
+    GUIDE_TITLE: 'Integration guide',
+    GUIDE_SUBTITLE:
+      'What a server must do to receive these webhooks, with code to copy. Download the PDF to share the full guide with your developers.',
+    GUIDE_DOWNLOAD: 'Download PDF',
+    GUIDE_DOWNLOADING: 'Preparing PDF…',
+    GUIDE_DOWNLOAD_FAILED: 'Could not download the guide. Please try again.',
+    GUIDE_LOAD_FAILED: 'Could not load the integration guide.',
+    GUIDE_RETRY: 'Try again',
+    GUIDE_GLANCE_TITLE: 'What your endpoint must do',
+    GUIDE_GLANCE_DESCRIPTION: (version: string) =>
+      `One URL that answers two kinds of request. Payload version ${version}.`,
+    GUIDE_GLANCE_GET_TITLE: 'Answer the verification GET',
+    GUIDE_GLANCE_GET_BODY: (param: string, seconds: number) =>
+      `When the URL is saved we send a GET with a "${param}" value in the query string. Reply 200 with that value as the plain-text body, within ${seconds} seconds.`,
+    GUIDE_GLANCE_POST_TITLE: 'Check the signature of every POST',
+    GUIDE_GLANCE_POST_BODY: (
+      algorithm: string,
+      separator: string,
+      signatureHeader: string,
+      timestampHeader: string,
+      minutes: number,
+    ) =>
+      `HMAC-${algorithm.toUpperCase()} of timestamp + "${separator}" + raw body, keyed with your signing secret, must match ${signatureHeader}. Reject requests whose ${timestampHeader} is more than ${minutes} minutes off, with 401.`,
+    GUIDE_GLANCE_ANSWER_TITLE: 'Answer fast',
+    GUIDE_GLANCE_ANSWER_BODY: (seconds: number, attempts: number) =>
+      `Reply with any 2xx within ${seconds} seconds and do slow work afterwards. Anything else is retried, up to ${attempts} attempts in all.`,
+    GUIDE_EXAMPLES_TITLE: 'Code examples',
+    GUIDE_EXAMPLES_DESCRIPTION: (envVar: string) =>
+      `Complete handlers that answer the verification GET and check the signature of every POST. Each reads the signing secret from the ${envVar} environment variable.`,
+    GUIDE_NEEDS: 'Needs',
+    GUIDE_RUN: 'Run',
+    GUIDE_COPY_CODE: 'Copy code',
+    GUIDE_VECTOR_TITLE: 'Test your signature check',
+    GUIDE_VECTOR_DESCRIPTION:
+      'Feed these exact values to your signature function: it must produce the expected header. The secret is an example only, and the timestamp is in the past, so skip the time check for this test.',
+    GUIDE_VECTOR_SECRET: 'Secret (example)',
+    GUIDE_VECTOR_BODY: 'Raw body',
+    GUIDE_VECTOR_EXPECTED: (header: string) => `Expected ${header}`,
   },
   COMMON: {
     LOADING: 'Loading…',

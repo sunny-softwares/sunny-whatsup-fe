@@ -11,6 +11,7 @@ export default function CompanyWebhooksPage() {
       description={UI_MESSAGES.WEBHOOKS.SUBTITLE}
       api={companyWebhookApi}
       deliveriesHref={ROUTES.COMPANY.WEBHOOK_DELIVERIES}
+      guideHref={ROUTES.COMPANY.WEBHOOK_GUIDE}
     />
   );
 }

@@ -62,6 +62,8 @@ interface WebhooksViewProps {
   api: WebhookApi;
   // Where the full delivery log lives for this audience.
   deliveriesHref: string;
+  // The integration guide for this audience (offered even before a URL exists).
+  guideHref: string;
   // When false nothing is fetched and notReadyMessage shows (super admin with
   // no company chosen). Defaults to true.
   ready?: boolean;
@@ -104,6 +106,7 @@ export function WebhooksView({
   description,
   api,
   deliveriesHref,
+  guideHref,
   ready = true,
   notReadyMessage,
   reloadKey,
@@ -262,17 +265,22 @@ export function WebhooksView({
       title={title}
       description={description}
       actions={
-        ready && endpoint ? (
-          <>
-            <Button variant="outline" size="sm" asChild>
-              <Link href={deliveriesHref}>{M.LOG_TITLE}</Link>
-            </Button>
-            <Button variant="outline" size="sm" onClick={load} disabled={loading || !!busy}>
-              <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
-              {UI_MESSAGES.COMMON.REFRESH}
-            </Button>
-          </>
-        ) : null
+        <>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={guideHref}>{M.GUIDE_BUTTON}</Link>
+          </Button>
+          {ready && endpoint ? (
+            <>
+              <Button variant="outline" size="sm" asChild>
+                <Link href={deliveriesHref}>{M.LOG_TITLE}</Link>
+              </Button>
+              <Button variant="outline" size="sm" onClick={load} disabled={loading || !!busy}>
+                <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
+                {UI_MESSAGES.COMMON.REFRESH}
+              </Button>
+            </>
+          ) : null}
+        </>
       }
     />
   );

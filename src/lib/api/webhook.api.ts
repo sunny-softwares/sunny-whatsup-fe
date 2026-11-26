@@ -1,5 +1,6 @@
-import { apiClient } from './client';
-import { API_ROUTES, WEBHOOK_API_PATHS } from '@/constants';
+import { apiClient, downloadFile } from './client';
+import { API_ROUTES, WEBHOOK_API_PATHS, WEBHOOK_GUIDE_API_PATHS } from '@/constants';
+import type { DownloadedFile } from '@/lib/download';
 import type {
   ApiResponseSuccess,
   Pagination,
@@ -7,6 +8,7 @@ import type {
   WebhookDeliveryListParams,
   WebhookDeliverySummary,
   WebhookEndpoint,
+  WebhookGuide,
   WebhookOverview,
   WebhookRotateResult,
   WebhookSaveResult,
@@ -119,3 +121,26 @@ export const companyWebhookApi = buildWebhookApi(API_ROUTES.COMPANY.WEBHOOK);
 // A company's webhook, managed by the super admin on its behalf.
 export const superAdminWebhookApi = (companyId: string) =>
   buildWebhookApi(API_ROUTES.SUPER_ADMIN.COMPANY_WEBHOOK(companyId));
+
+/**
+ * The webhook integration guide. It is the same for every company, so the
+ * super admin reads it from one route rather than per company.
+ */
+export interface WebhookGuideApi {
+  getGuide: () => Promise<ApiResponseSuccess<WebhookGuide>>;
+  downloadPdf: () => Promise<DownloadedFile>;
+}
+
+const buildWebhookGuideApi = (root: string): WebhookGuideApi => ({
+  async getGuide() {
+    const { data } = await apiClient.get<ApiResponseSuccess<WebhookGuide>>(root);
+    return data;
+  },
+  downloadPdf() {
+    return downloadFile(`${root}${WEBHOOK_GUIDE_API_PATHS.PDF}`);
+  },
+});
+
+export const companyWebhookGuideApi = buildWebhookGuideApi(API_ROUTES.COMPANY.WEBHOOK_GUIDE);
+
+export const superAdminWebhookGuideApi = buildWebhookGuideApi(API_ROUTES.SUPER_ADMIN.WEBHOOK_GUIDE);
