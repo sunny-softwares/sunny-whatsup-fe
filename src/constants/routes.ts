@@ -15,6 +15,8 @@ export const ROUTES = {
     // Meta's Billing Hub link-out — not our subscription page.
     BILLING: '/company/billing',
     SUBSCRIPTION: '/company/subscription',
+    WEBHOOKS: '/company/webhooks',
+    WEBHOOK_DELIVERIES: '/company/webhooks/deliveries',
   },
   ADMIN: {
     ROOT: '/admin',
@@ -30,6 +32,8 @@ export const ROUTES = {
     SUBSCRIPTIONS: '/admin/subscriptions',
     PLANS: '/admin/plans',
     PAYMENT_LINKS: '/admin/payment-links',
+    WEBHOOKS: '/admin/webhooks',
+    WEBHOOK_DELIVERIES: '/admin/webhooks/deliveries',
   },
   SETTINGS: {
     ROOT: '/settings',
@@ -139,6 +143,8 @@ export const API_ROUTES = {
     PAYMENT_LINK_CANCEL: (id: string) => `/super-admin/payment-links/${id}/cancel`,
     PAYMENT_LINK_NOTIFY: (id: string) => `/super-admin/payment-links/${id}/notify`,
     PAYMENT_LINK_SYNC: (id: string) => `/super-admin/payment-links/${id}/sync`,
+    // Outbound webhooks managed on a company's behalf.
+    COMPANY_WEBHOOK: (companyId: string) => `/super-admin/companies/${companyId}/webhook`,
   },
   COMPANY: {
     ME: '/company/me',
@@ -179,5 +185,21 @@ export const API_ROUTES = {
     SUBSCRIPTION_CANCEL: '/company/subscription/cancel',
     SUBSCRIPTION_RESUME: '/company/subscription/resume',
     SUBSCRIPTION_INTEREST: '/company/subscription/interest',
+    // Outbound webhooks — the company's own endpoint (a singular resource).
+    WEBHOOK: '/company/webhook',
   },
+} as const;
+
+// Sub-paths under a webhook root (COMPANY.WEBHOOK, or SUPER_ADMIN.COMPANY_WEBHOOK(id)).
+export const WEBHOOK_API_PATHS = {
+  VERIFY: '/verify',
+  FIELDS: '/fields',
+  ENABLE: '/enable',
+  DISABLE: '/disable',
+  SECRET_REVEAL: '/secret/reveal',
+  SECRET_ROTATE: '/secret/rotate',
+  TEST: '/test',
+  DELIVERIES: '/deliveries',
+  DELIVERY: (id: string) => `/deliveries/${id}`,
+  DELIVERY_REDELIVER: (id: string) => `/deliveries/${id}/redeliver`,
 } as const;

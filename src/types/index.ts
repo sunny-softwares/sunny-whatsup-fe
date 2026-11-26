@@ -7,6 +7,7 @@ export * from './template';
 export * from './subscription';
 export * from './paymentLink';
 export * from './analytics';
+export * from './webhook';
 
 export interface AuthUser {
   id: string;

@@ -713,6 +713,187 @@ export const UI_MESSAGES = {
     PAYMENT_MODE_LABEL: 'Razorpay mode',
     ALL_MODES: 'All modes',
   },
+  WEBHOOKS: {
+    NAV_LABEL: 'Webhooks',
+    TITLE: 'Webhooks',
+    SUBTITLE:
+      'Get status updates for messages you send through Sunny WhatsUp, posted to your own server.',
+    ADMIN_TITLE: 'Company Webhooks',
+    ADMIN_SUBTITLE: 'Select a company to manage its webhook on its behalf.',
+    NO_COMPANY_SELECTED: 'Select a company above to view and manage its webhook.',
+    FEATURE_OFF_TITLE: (company: string) => `Webhooks are turned off for ${company}`,
+    FEATURE_OFF_TITLE_GENERIC: 'Webhooks are turned off for this company',
+    FEATURE_OFF_BODY:
+      'Turn them on in Features before you or the company can set up a webhook. Nothing is sent while the feature is off.',
+    FEATURE_OFF_LINK: 'Open Features',
+
+    // Callback URL
+    URL_TITLE: 'Callback URL',
+    URL_DESCRIPTION:
+      'We send a POST request here for every event you subscribe to. Changing the URL runs verification again.',
+    URL_DESCRIPTION_EMPTY:
+      'Add the HTTPS address on your server that should receive events. Until you do, nothing changes: messages and statuses keep working in the dashboard and API as they do today.',
+    URL_LABEL: 'Endpoint URL',
+    URL_PLACEHOLDER: 'https://your-server.com/webhooks/sunny',
+    URL_HINT: 'Must start with https://. Private, local and internal addresses are not allowed.',
+    STATUS_NOT_SET_UP: 'Not set up',
+    SAVE_AND_VERIFY: 'Save and verify',
+    VERIFY_AGAIN: 'Verify again',
+    VERIFYING: 'Verifying…',
+    VERIFYING_HINT: (seconds: number) =>
+      `We sent a GET request with a challenge. Waiting for your endpoint to answer (up to ${seconds} seconds).`,
+    URL_KEPT_HINT: 'Your previous URL is still in use.',
+    STAT_VERIFIED: 'Verified',
+    STAT_LAST_SUCCESS: 'Last success',
+    STAT_LAST_24H: 'Last 24 h',
+    STAT_LAST_24H_VALUE: (sent: number, failed: number) => `${sent} delivered · ${failed} failed`,
+    STAT_WAITING: 'Waiting to send',
+    STAT_FAILURES: 'Failures in a row',
+    NEVER: 'Never',
+    HOW_IT_STARTS_TITLE: 'What happens when you save',
+    STEP_VERIFY_TITLE: 'We verify the URL',
+    STEP_VERIFY_BODY: (param: string, seconds: number) =>
+      `We send a GET request with a "${param}" value. Your endpoint must reply 200 with that value as the body, within ${seconds} seconds.`,
+    STEP_SECRET_TITLE: 'You get a signing secret',
+    STEP_SECRET_BODY:
+      'It is shown right after verification. Use it to check that requests really come from us.',
+    STEP_FIELDS_TITLE: 'You choose the fields',
+    STEP_FIELDS_BODY: (field: string) =>
+      `Subscribe to "${field}" to start getting status updates. Nothing is sent until you do.`,
+    LOCKED_TITLE: 'Signing secret and webhook fields',
+    LOCKED_BODY: 'Available once your URL is verified.',
+
+    // Pause / resume / remove
+    PAUSE: 'Pause sending',
+    PAUSE_CONFIRM_TITLE: 'Pause webhook sending?',
+    PAUSE_CONFIRM:
+      'We stop sending events until you resume. Events that happen meanwhile are kept and sent when you resume, if they are still recent.',
+    RESUME: 'Re-enable',
+    RESUMED: 'Webhook sending resumed.',
+    REMOVE: 'Remove webhook',
+    REMOVE_CONFIRM_TITLE: 'Remove this webhook?',
+    REMOVE_CONFIRM:
+      'We stop sending events and delete the URL, the signing secret and the delivery history. You can set up a new webhook at any time.',
+    PAUSED_TITLE: 'Webhook sending is paused',
+    PAUSED_BODY_MANUAL: (date: string) =>
+      `Sending was paused on ${date}. Events are kept while paused and sent when you re-enable, if they are still recent.`,
+    PAUSED_BODY_FAILURES: (date: string, hours: number, failures: number) =>
+      `Your URL kept failing (no success for ${hours} hours, or ${failures} failures in a row), so we stopped sending on ${date}. Fix your endpoint, then re-enable it.`,
+    PAUSED_BODY_GONE: (date: string) =>
+      `Your endpoint answered 410 Gone on ${date}, which tells us to stop. Re-enable it once the URL is ready again.`,
+    PAUSED_RESUME_HINT: (hours: number) =>
+      `When you re-enable, events from the last ${hours} hours are sent. Older ones are marked Failed and stay in the delivery log.`,
+
+    // Signing secret
+    SECRET_TITLE: 'Signing secret',
+    SECRET_DESCRIPTION:
+      'Use it to check that a request really came from Sunny WhatsUp. Keep it on your server only.',
+    REVEAL: 'Reveal',
+    ROTATE: 'Rotate',
+    COPY: 'Copy',
+    COPIED: 'Copied!',
+    DONE: 'Done',
+    SECRET_ROTATED_AT: (date: string) => `Last rotated ${date}`,
+    SECRET_ROTATION_ACTIVE: (date: string) =>
+      `Requests are signed with both the old and the new secret until ${date}.`,
+    SECRET_DIALOG_TITLE: 'Your signing secret',
+    SECRET_DIALOG_NEW_TITLE: 'Save your signing secret',
+    SECRET_DIALOG_ROTATED_TITLE: 'Your new signing secret',
+    SECRET_DIALOG_HINT:
+      'Store it in your server’s environment. You can reveal it here again later; each reveal is recorded.',
+    ROTATE_CONFIRM_TITLE: 'Rotate signing secret?',
+    ROTATE_CONFIRM: (hours: number) =>
+      `We’ll create a new secret now. For the next ${hours} hours every request is signed with both the old and the new secret, so you can switch your server over without missing events. After that only the new one works.`,
+    ROTATE_CONFIRM_ACTION: 'Rotate secret',
+    VERIFY_STEPS_TITLE: 'How to check a request',
+    VERIFY_STEP_TIMESTAMP: (header: string, minutes: number) =>
+      `Reject it if ${header} is more than ${minutes} minutes old.`,
+    VERIFY_STEP_SIGN: (algorithm: string, separator: string) =>
+      `Compute HMAC-${algorithm.toUpperCase()} of timestamp + "${separator}" + raw body with your secret.`,
+    VERIFY_STEP_COMPARE: (header: string, prefix: string) =>
+      `Compare it with ${header} (${prefix}…) using a constant-time comparison. During a rotation the header holds two comma-separated signatures; accept either.`,
+    VERIFY_STEP_DEDUPE: (header: string) =>
+      `Ignore repeats: the same ${header} can arrive more than once.`,
+
+    // Fields
+    FIELDS_TITLE: 'Webhook fields',
+    FIELDS_DESCRIPTION:
+      'Choose what we send to your URL. More fields will appear here as they become available.',
+    COL_FIELD: 'Field',
+    COL_WHAT: 'What you get',
+    COL_TEST: 'Test',
+    COL_SUBSCRIPTION: 'Subscription',
+    SUBSCRIBED: 'Subscribed',
+    UNSUBSCRIBED: 'Unsubscribed',
+    SUBSCRIBE_ARIA: (field: string) => `Subscribe to ${field}`,
+    TEST: 'Test',
+    UNSUBSCRIBED_HINT:
+      'No events are sent while every field is unsubscribed. Your URL and secret stay as they are.',
+    TEST_SENT_TITLE: 'Test event delivered',
+    TEST_FAILED_TITLE: 'Test event failed',
+    TEST_SENT_BODY: (status: number | null, ms: number | null) =>
+      `We sent a signed test event. Your server answered ${status ?? '—'}${ms !== null ? ` in ${ms} ms` : ''}.`,
+    TEST_FAILED_BODY: (reason: string) => `We sent a signed test event, but it did not succeed: ${reason}`,
+    VIEW_DETAILS: 'View details',
+
+    // Deliveries
+    RECENT_TITLE: 'Recent deliveries',
+    RECENT_DESCRIPTION: (count: number) => `The last ${count} events sent to your URL.`,
+    VIEW_ALL: 'View all',
+    NO_DELIVERIES: 'No events have been sent yet.',
+    LOG_TITLE: 'Delivery log',
+    LOG_SUBTITLE: (days: number) =>
+      `Every event we sent in the last ${days} days. Times are in your browser’s time zone.`,
+    BACK_TO_WEBHOOKS: 'Webhooks',
+    SEARCH_LABEL: 'Search',
+    SEARCH_PLACEHOLDER: 'Event ID, message ID or wamid',
+    EVENT_LABEL: 'Event',
+    COL_TIME: 'Time',
+    COL_EVENT: 'Event',
+    COL_MESSAGE: 'Message ID',
+    COL_RECIPIENT: 'Recipient',
+    COL_RESPONSE: 'Response',
+    COL_ATTEMPTS: 'Attempts',
+    COL_STATUS: 'Status',
+    VIEW: 'View',
+    ATTEMPTS_OF: (count: number, max: number) => `${count} of ${max}`,
+    RESPONSE_VALUE: (status: number | null, ms: number | null) =>
+      [status ?? '—', ms !== null ? `${ms} ms` : null].filter(Boolean).join(' · '),
+    DELIVERY_LABEL_DELIVERED: 'Delivered',
+    DELIVERY_LABEL_RETRYING: 'Retrying',
+    DELIVERY_LABEL_WAITING: 'Waiting',
+    DELIVERY_LABEL_SENDING: 'Sending',
+    DELIVERY_LABEL_FAILED: 'Failed',
+    DELIVERY_LABEL_SKIPPED: 'Skipped',
+    NOTE_NEXT_TRY: (time: string) => `Next try ${time}`,
+    NOTE_RETRIES_EXHAUSTED: 'Gave up after the last retry',
+    NOTE_GONE: 'Endpoint answered 410 Gone',
+    NOTE_EXPIRED: 'Too old to send when resumed',
+    NOTE_UNSUBSCRIBED: 'Field unsubscribed',
+    NOTE_FEATURE_DISABLED: 'Webhooks turned off',
+    NOTE_TEST: 'Sent from Test',
+    NOTE_HELD: 'Held while sending is paused',
+
+    // Delivery details
+    DETAIL_EVENT_ID: 'Event ID',
+    DETAIL_MESSAGE_ID: 'Message ID',
+    DETAIL_RECIPIENT: 'Recipient',
+    DETAIL_CREATED: 'Created',
+    DETAIL_ATTEMPTS: 'Attempts',
+    DETAIL_NEXT_ATTEMPT: 'Next attempt',
+    DETAIL_ATTEMPTS_TITLE: 'Attempts',
+    DETAIL_NO_ATTEMPTS: 'Not sent yet.',
+    DETAIL_REQUEST_TITLE: 'Request we sent',
+    DETAIL_RESPONSE_TITLE: 'Last response from your server',
+    DETAIL_RESPONSE_HINT: 'Only the first part of the response body is kept.',
+    DETAIL_NO_RESPONSE: 'No response body.',
+    DETAIL_SUMMARY_RETRYING: (time: string) =>
+      `Your server did not accept it. We’ll try again at ${time}.`,
+    REDELIVER: 'Redeliver now',
+    REDELIVER_PAUSED_HINT: 'Re-enable the webhook to redeliver.',
+    REDELIVERY_QUEUED: 'Redelivery queued.',
+    CLOSE: 'Close',
+  },
   COMMON: {
     LOADING: 'Loading…',
     NO_MATCHES: 'No matches found',
