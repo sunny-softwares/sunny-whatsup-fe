@@ -257,6 +257,7 @@ export function WabaView({
         p.templates_count,
         p.messages_count,
         p.phone_numbers_count,
+        p.webhook_deliveries_count,
       );
       setNotice(
         res.data.new_active_waba_account_id
@@ -549,6 +550,14 @@ export function WabaView({
               <ul className="space-y-0.5">
                 <li>· {disconnectTarget?.templates_count ?? 0} message template(s)</li>
                 <li>· {disconnectTarget?.messages_count ?? 0} message log(s)</li>
+                {disconnectTarget?.webhook_deliveries_count ? (
+                  <li>
+                    ·{' '}
+                    {UI_MESSAGES.WABA_ACCOUNTS.WILL_DELETE_WEBHOOK_DELIVERIES(
+                      disconnectTarget.webhook_deliveries_count,
+                    )}
+                  </li>
+                ) : null}
                 <li>· {disconnectTarget?.phoneNumbers?.length ?? 0} phone number(s)</li>
                 <li>· The WABA connection itself</li>
               </ul>

@@ -84,6 +84,8 @@ export interface WabaAccount {
 export interface WabaAccountSummary extends WabaAccount {
   templates_count: number;
   messages_count: number;
+  // Outbound webhook deliveries for this WABA's messages; removed with them.
+  webhook_deliveries_count: number;
 }
 
 export interface SyncAllWabasResult {
@@ -105,6 +107,7 @@ export interface DisconnectWabaResult {
     templates_count: number;
     messages_count: number;
     messages_sampled: number;
+    webhook_deliveries_count: number;
   };
   // Set when the active WABA was removed and another one was promoted.
   new_active_waba_account_id: string | null;

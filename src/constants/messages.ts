@@ -164,8 +164,12 @@ export const UI_MESSAGES = {
     DISCONNECT_TITLE: (name: string) => `Disconnect “${name}”?`,
     DISCONNECT_ACTIVE_NOTE:
       'This is the active account. Another connected account (the most recently connected) will become active automatically.',
-    DISCONNECTED: (templates: number, messages: number, phones: number) =>
-      `Disconnected. Purged ${templates} template(s), ${messages} message(s), ${phones} phone number(s).`,
+    DISCONNECTED: (templates: number, messages: number, phones: number, webhookDeliveries = 0) =>
+      `Disconnected. Purged ${templates} template(s), ${messages} message(s), ${phones} phone number(s)${
+        webhookDeliveries ? `, ${webhookDeliveries} webhook delivery record(s)` : ''
+      }.`,
+    // In the "Will be deleted" list; shown only when there are any.
+    WILL_DELETE_WEBHOOK_DELIVERIES: (count: number) => `${count} webhook delivery record(s)`,
     PROMOTED: 'Another connected account is now active.',
   },
   PHONE: {
